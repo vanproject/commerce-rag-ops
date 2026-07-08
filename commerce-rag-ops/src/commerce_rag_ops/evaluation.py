@@ -17,7 +17,9 @@ from .retrieval import RetrievalMode
 from .retriever_backends import RetrieverBackend
 
 SUPPORT_QUALITY_KEYS = [
+    "action_accuracy",
     "citation_ok",
+    "citation_leak_rate",
     "citation_schema_ok",
     "answer_citation_precision",
     "answer_citation_recall",
@@ -204,7 +206,9 @@ def run_evaluation(
                 "action": state.action,
                 "attempts": state.attempts,
                 "evidence_gaps": evidence_gaps,
+                "action_accuracy": 1.0 if state.action == row.get("expected_action", "answer") else 0.0,
                 "citation_ok": 1.0 if state.citations or not row.get("must_cite", True) else 0.0,
+                "citation_leak_rate": _citation_leak_rate(state, row, citation_contract),
                 **citation_contract,
                 "keyword_coverage": answer_contains_keywords(state.answer, row.get("expected_keywords", [])),
                 "groundedness_proxy": state.grader_scores.get("groundedness_proxy", 0.0),
@@ -356,20 +360,25 @@ def run_groundedness_evaluation(
             tool_results=state.tool_results,
             expected=row,
         )
-        final_pass = final_groundedness_pass(det, judge_result)
-        business_pass = (
-            state.action == row.get("expected_action", "answer")
-            and judge_result["answer_relevant"]
-            and final_pass
-            and det["required_facet_pass"]
-            and not judge_result["unsafe_commitment"]
-        )
+        expected_action = row.get("expected_action", "answer")
+        if expected_action == "clarify":
+            final_pass = bool(det.get("deterministic_grounding_pass"))
+            business_pass = state.action == "clarify" and final_pass and not judge_result["unsafe_commitment"]
+        else:
+            final_pass = final_groundedness_pass(det, judge_result)
+            business_pass = (
+                state.action == expected_action
+                and judge_result["answer_relevant"]
+                and final_pass
+                and det["required_facet_pass"]
+                and not judge_result["unsafe_commitment"]
+            )
         results.append(
             {
                 "query_id": row["query_id"],
                 "query": row["query"],
                 "intent": row.get("intent", "unknown"),
-                "expected_action": row.get("expected_action", "answer"),
+                "expected_action": expected_action,
                 "action": state.action,
                 "deterministic": det,
                 "judge": judge_result,
@@ -402,6 +411,15 @@ def _skipped_gate(metric: str, operator: str, threshold: float) -> dict[str, Any
         "passed": True,
         "skipped": True,
     }
+
+
+def _citation_leak_rate(state: Any, row: dict[str, Any], citation_contract: dict[str, Any]) -> float:
+    if row.get("expected_action") not in {"refuse", "clarify"}:
+        return 0.0
+    answer_citations = int(citation_contract.get("answer_citation_count", 0))
+    state_citations = len(getattr(state, "citations", []) or [])
+    tool_citations = len(getattr(state, "tool_citations", []) or [])
+    return 1.0 if answer_citations or state_citations or tool_citations else 0.0
 
 
 def _default_scripted_eval_path(data_dir: Path, eval_filename: str | None) -> Path:
@@ -772,7 +790,9 @@ def write_eval_report(report_path: Path, report: dict[str, Any]) -> None:
         f"- entity_accuracy@5: {report['retrieval'].get('entity_accuracy@5', 0.0)}",
         f"- aspect_accuracy@5: {report['retrieval'].get('aspect_accuracy@5', 0.0)}",
         f"- forbidden_rate@5: {report['retrieval'].get('forbidden_rate@5', 0.0)}",
+        f"- Action accuracy: {report['support_quality'].get('action_accuracy', 0.0)}",
         f"- 引用率: {report['support_quality']['citation_ok']}",
+        f"- Citation leak rate(refuse/clarify): {report['support_quality'].get('citation_leak_rate', 0.0)}",
         f"- Citation schema OK: {report['support_quality'].get('citation_schema_ok', 0.0)}",
         f"- Answer citation precision/recall: {report['support_quality'].get('answer_citation_precision', 0.0)} / {report['support_quality'].get('answer_citation_recall', 0.0)}",
         f"- Citation grounded rate: {report['support_quality'].get('citation_grounded_rate', 0.0)}",
@@ -940,6 +960,13 @@ def _summarize_groundedness_rows(rows: list[dict[str, Any]], *, judge_model: str
         "forbidden_claim_pass_rate": rate(lambda row: row["deterministic"]["forbidden_claim_pass"]),
         "required_facet_pass_rate": rate(lambda row: row["deterministic"]["required_facet_pass"]),
         "action_accuracy": rate(lambda row: row["action"] == row["expected_action"]),
+        "clarify_accuracy": rate(lambda row: row["expected_action"] != "clarify" or row["action"] == "clarify"),
+        "citation_leak_rate": rate(
+            lambda row: bool(row["deterministic"].get("citation_contract", {}).get("answer_citation_count", 0))
+            or bool(row["deterministic"].get("tool_citation_contract", {}).get("answer_tool_citation_count", 0))
+            if row["expected_action"] in {"refuse", "clarify"}
+            else False
+        ),
         "answer_relevance": rate(lambda row: row["judge"]["answer_relevant"]),
         "rows": rows,
     }
@@ -979,6 +1006,9 @@ def write_groundedness_report(report_path: Path, report: dict[str, Any]) -> None
         f"- policy_consistency_pass_rate: {report['policy_consistency_pass_rate']}",
         f"- forbidden_claim_pass_rate: {report['forbidden_claim_pass_rate']}",
         f"- required_facet_pass_rate: {report['required_facet_pass_rate']}",
+        f"- action_accuracy: {report.get('action_accuracy', 0.0)}",
+        f"- clarify_accuracy: {report.get('clarify_accuracy', 0.0)}",
+        f"- citation_leak_rate(refuse/clarify): {report.get('citation_leak_rate', 0.0)}",
         "",
         "## Failure Samples",
         "",

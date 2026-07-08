@@ -62,6 +62,8 @@ class RootRouterAgent:
             add("unknown", 4.0, "safety_domain", "financial-market/out-of-domain wording")
         for term in [
             "complaint trend",
+            "common complaints",
+            "complaints",
             "customer ops",
             "pain point",
             "negative reviews",
@@ -71,8 +73,16 @@ class RootRouterAgent:
             "why customers",
             "review evidence",
             "customer feedback",
+            "customer reviews",
             "aspect summary",
             "complaint cluster",
+            "glitchy",
+            "license activation",
+            "content access",
+            "run small",
+            "battery life",
+            "fall apart",
+            "rusted parts",
         ]:
             if term in q:
                 add("customer_ops", 2.2, "lexical_phrase", term)
@@ -81,7 +91,23 @@ class RootRouterAgent:
             add("sku_order", 4.5, "structured_entity", "explicit order id or sku")
             if tokens & HIGH_RISK_TERMS:
                 add("support", 5.5, "structured_support_case", "explicit entity with refund/return/warranty risk")
-        for term in ["recommend", "best", "compare", "suggest", "looking for"]:
+        for term in [
+            "recommend",
+            "best",
+            "compare",
+            "suggest",
+            "looking for",
+            "which item",
+            "what product",
+            "what app",
+            "average rating",
+            "customer rating",
+            "how many reviews",
+            "key features",
+            "designed for",
+            "helps reduce",
+            "well-reviewed",
+        ]:
             if term in q:
                 add("recommendation", 2.0, "lexical_phrase", term)
         if "how should support handle" in q or "support handle" in q:
@@ -93,9 +119,30 @@ class RootRouterAgent:
             add("sku_order", 2.5, "entity_keyword", "sku/stock/inventory")
         if "delivery status" in q or has_order_status:
             add("sku_order", 2.6, "order_status", "order status/tracking")
-        if "price" in tokens and "price_value" not in q and "price value" not in q:
+        if "price" in tokens and "price_value" not in q and "price value" not in q and "price-value" not in q:
             add("sku_order", 1.6, "entity_keyword", "price lookup")
-        for term in ["refund", "return", "warranty", "shipping", "delivery", "cancel", "payment"]:
+        for term in [
+            "refund",
+            "return",
+            "warranty",
+            "shipping",
+            "delivery",
+            "cancel",
+            "payment",
+            "support options",
+            "quality issues",
+            "arrived damaged",
+            "incomplete orders",
+            "money back",
+            "file a complaint",
+            "what should i do",
+            "support for",
+            "good deal",
+            "price-value",
+            "price value",
+            "smell",
+            "scent",
+        ]:
             if term in q:
                 add("support", 1.8, "support_keyword", term)
         for term in [

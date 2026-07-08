@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 Intent = Literal["support", "recommendation", "customer_ops", "sku_order", "unknown"]
 RiskLevel = Literal["low", "medium", "high"]
-AgentAction = Literal["answer", "retry", "refuse", "escalate"]
+AgentAction = Literal["answer", "retry", "refuse", "escalate", "clarify"]
 
 
 @dataclass(frozen=True)
@@ -119,6 +119,9 @@ class AgentState:
     # Deprecated compatibility mirror. The agent no longer treats this as a
     # control-plane retrieval plan; semantic memory is called through tools.
     retrieval_plan: list[str] = field(default_factory=list)
+    entity_retrieval: dict[str, Any] = field(default_factory=dict)
+    entity_candidates: list[dict[str, Any]] = field(default_factory=list)
+    selected_entity: dict[str, Any] | None = None
     retrieved_contexts: list[SearchResult] = field(default_factory=list)
     tool_results: dict[str, Any] = field(default_factory=dict)
     tool_citations: list[str] = field(default_factory=list)

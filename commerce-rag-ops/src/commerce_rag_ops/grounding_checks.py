@@ -55,7 +55,8 @@ def run_deterministic_grounding_checks(
     facets. They do not try to replace semantic claim support judging.
     """
 
-    must_cite = bool(expected.get("must_cite", expected.get("expected_action", "answer") == "answer"))
+    expected_action = str(expected.get("expected_action", "answer"))
+    must_cite = bool(expected.get("must_cite", expected_action == "answer")) and expected_action == "answer"
     citation_contract = validate_citation_contract(
         answer=answer,
         citations=citations,
@@ -66,8 +67,38 @@ def run_deterministic_grounding_checks(
     tool_contract = validate_tool_citation_contract(
         answer=answer,
         tool_citations=tool_citations,
-        must_cite=must_cite and bool(tool_citations),
+        must_cite=must_cite and bool(tool_citations) and _answer_uses_tool_citation(answer, tool_citations),
     )
+
+    if expected_action == "clarify":
+        clarify_result = _clarify_check(answer)
+        citation_leak = bool(citations or re.search(r"\[(?:doc|tool):[^\]]+\]", answer))
+        errors = []
+        if citation_leak:
+            errors.append("citation_leak")
+        if not clarify_result["pass"]:
+            errors.append("clarify_missing_slot_request")
+        final_pass = not errors
+        return {
+            "citation_schema_pass": not citation_leak,
+            "citation_contract": citation_contract,
+            "tool_citation_schema_pass": not citation_leak,
+            "tool_citation_contract": tool_contract,
+            "entity_consistency_pass": True,
+            "wrong_entities": [],
+            "numeric_consistency_pass": True,
+            "unsupported_numbers": [],
+            "policy_consistency_pass": True,
+            "policy_errors": [],
+            "forbidden_claim_pass": True,
+            "forbidden_claims": [],
+            "required_facet_pass": True,
+            "missing_facets": [],
+            "clarify_pass": clarify_result["pass"],
+            "clarify_errors": clarify_result["errors"],
+            "deterministic_grounding_pass": final_pass,
+            "errors": sorted(set(errors)),
+        }
 
     entity_result = _entity_consistency(answer, retrieved_contexts, tool_results, expected)
     numeric_result = _numeric_consistency(answer, retrieved_contexts, tool_results)
@@ -218,6 +249,23 @@ def _required_facet_check(answer: str, expected: dict[str, Any]) -> dict[str, An
         if not any(term.lower() in lowered for term in terms):
             missing.append(str(facet))
     return {"pass": not missing, "missing_facets": missing}
+
+
+def _clarify_check(answer: str) -> dict[str, Any]:
+    lowered = answer.lower()
+    slot_terms = ["product", "sku", "order", "item name", "product name", "asin"]
+    asks = "?" in answer or any(term in lowered for term in ["please provide", "send me", "share", "which"])
+    has_slot = any(term in lowered for term in slot_terms)
+    errors: list[str] = []
+    if not asks:
+        errors.append("not_asking_user")
+    if not has_slot:
+        errors.append("missing_slot_name")
+    return {"pass": asks and has_slot, "errors": errors}
+
+
+def _answer_uses_tool_citation(answer: str, tool_citations: list[str]) -> bool:
+    return any(citation in answer for citation in tool_citations)
 
 
 def _known_entities(retrieved_contexts: list[Any], tool_results: dict[str, Any]) -> set[str]:

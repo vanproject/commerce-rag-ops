@@ -4,11 +4,14 @@ from tempfile import TemporaryDirectory
 
 from commerce_rag_ops.agent import CommerceRAGAgent
 from commerce_rag_ops.api import build_agent
+from commerce_rag_ops.citation_repair import repair_answer_citations
 from commerce_rag_ops.citation_quality import validate_citation_contract, validate_tool_citation_contract
 from commerce_rag_ops.conversation_store import ConversationStore
 from commerce_rag_ops.document_loaders import load_knowledge_documents_with_report
 from commerce_rag_ops.entity_memory import EntityResolver, context_resolution_to_legacy_payload, extract_entities_from_state
+from commerce_rag_ops.entity_retrieval import EntityCandidateRetriever
 from commerce_rag_ops.etl import load_processed_chunks, persist_processed
+from commerce_rag_ops.eval_repair import repair_eval_row
 from commerce_rag_ops.evidence import EvidenceGapAnalyzer
 from commerce_rag_ops.evaluation import evaluate_quality_gates, run_ablation, run_evaluation
 from commerce_rag_ops.fallback_stress import run_fallback_stress
@@ -384,6 +387,118 @@ def test_tool_citation_contract_validates_answer_markers():
     )
     assert bad["tool_citation_schema_ok"] == 0.0
     assert "unknown_answer_tool_citation" in bad["tool_citation_failures"]
+
+
+def test_citation_repair_appends_doc_and_strips_non_answer_citations():
+    citation = "[doc:kb:KB001_return_refund_policy#abc123]"
+    repaired = repair_answer_citations(
+        answer="Refunds require a policy check.",
+        action="answer",
+        citations=[citation],
+        tool_citations=[],
+        require_doc_citation=True,
+    )
+    assert repaired["answer"].endswith(citation)
+    assert "appended_doc_citation" in repaired["changes"]
+
+    clarified = repair_answer_citations(
+        answer=f"Please provide the product name. {citation} [tool:sql.product_by_id:P-BABY-001]",
+        action="clarify",
+        citations=[citation],
+        tool_citations=["[tool:sql.product_by_id:P-BABY-001]"],
+        require_doc_citation=False,
+    )
+    assert clarified["citations"] == []
+    assert clarified["tool_citations"] == []
+    assert "[doc:" not in clarified["answer"]
+    assert "[tool:" not in clarified["answer"]
+
+
+def test_context_required_reference_clarifies_without_citation():
+    chunks = load_processed_chunks(DATA_DIR)
+    retriever = HybridRetriever(chunks, use_env_reranker=False)
+    agent = CommerceRAGAgent(retriever, DATA_DIR, advisor=FakeAdvisor())
+
+    state = agent.run("what is the average rating for this item?", max_retries=0)
+
+    assert state.action == "clarify"
+    assert "product name" in state.answer.lower() or "sku" in state.answer.lower()
+    assert state.citations == []
+    assert state.tool_citations == []
+
+
+def test_entity_candidate_retrieval_selects_scale_product_from_profile_text():
+    chunks = load_processed_chunks(DATA_DIR)
+    entity_retriever = EntityCandidateRetriever(chunks)
+
+    candidates = entity_retriever.retrieve("how is the battery life of the nira laser device?", top_k=3)
+
+    assert candidates
+    assert candidates[0].product_id == "B08P2DZB4X"
+    assert candidates[0].confidence >= 0.34
+    assert "lexical_product_title" in candidates[0].evidence
+
+
+def test_agent_uses_entity_candidate_to_constrain_semantic_memory():
+    target = DocumentChunk(
+        chunk_id="target",
+        source="product",
+        doc_id="PP-All_Beauty-B08P2DZB4X",
+        text="NIRA laser device product profile with battery life discussion.",
+        metadata={
+            "doc_type": "product_profile",
+            "product_id": "B08P2DZB4X",
+            "sku": "B08P2DZB4X",
+            "category": "All_Beauty",
+            "title": "nira laser device",
+        },
+    )
+    wrong = DocumentChunk(
+        chunk_id="wrong",
+        source="product",
+        doc_id="PP-All_Beauty-B000067E30",
+        text="Whitening strips product profile.",
+        metadata={
+            "doc_type": "product_profile",
+            "product_id": "B000067E30",
+            "sku": "B000067E30",
+            "category": "All_Beauty",
+            "title": "crest whitestrips",
+        },
+    )
+
+    class ConfusedRetriever:
+        chunks = [target, wrong]
+
+        def search(self, query, *, sources=None, top_k=5, candidate_k=30, mode="hybrid_rerank"):
+            self.last_diagnostics = {"query": query, "stages": [], "candidates": []}
+            return [
+                SearchResult(wrong, score=0.9, rerank_score=0.9),
+                SearchResult(target, score=0.8, rerank_score=0.8),
+            ]
+
+    agent = CommerceRAGAgent(ConfusedRetriever(), DATA_DIR)
+    results, diagnostics = agent._semantic_memory_search(
+        "how is the battery life of the nira laser device?",
+        ["product", "review"],
+        5,
+        30,
+    )
+
+    assert diagnostics["entity_retrieval"]["selected_entity"]["product_id"] == "B08P2DZB4X"
+    assert [result.chunk.metadata["product_id"] for result in results] == ["B08P2DZB4X"]
+
+
+def test_eval_row_repair_removes_target_from_forbidden_products():
+    row = {
+        "query_id": "H-test",
+        "target_entities": {"product_id": "B000067E30"},
+        "forbidden_evidence": {"wrong_product_ids": ["B000067E30", "B000068PBJ"]},
+    }
+    repaired, changes = repair_eval_row(row)
+
+    assert "removed_target_from_wrong_product_ids" in changes
+    assert repaired["forbidden_evidence"]["wrong_product_ids"] == ["B000068PBJ"]
 
 
 def test_tool_registry_planner_policy_and_eval():

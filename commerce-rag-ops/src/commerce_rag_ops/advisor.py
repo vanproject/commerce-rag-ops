@@ -13,7 +13,7 @@ from .tools.base import ToolCall
 
 
 VALID_INTENTS = {"support", "recommendation", "customer_ops", "sku_order", "unknown"}
-VALID_ACTIONS = {"answer", "retry", "refuse", "escalate"}
+VALID_ACTIONS = {"answer", "retry", "refuse", "escalate", "clarify"}
 VALID_PLAN_ACTIONS = {"direct_answer", "ask_user", "call_tools", "retrieve_memory", "decide_action"}
 
 
@@ -233,7 +233,7 @@ class OpenAICompatibleAdvisor:
     ) -> dict[str, Any]:
         prompt = {
             "task": (
-                "Suggest final action for an ecommerce support agent. You can propose answer, retry, refuse, or escalate. "
+                "Suggest final action for an ecommerce support agent. You can propose answer, retry, refuse, escalate, or clarify. "
                 "Do not approve refunds or bypass missing evidence; suggest escalation/confirmation for risky operations."
             ),
             "query": state.query,
@@ -257,7 +257,7 @@ class OpenAICompatibleAdvisor:
                 ],
             },
             "output_schema": {
-                "action": "answer | retry | refuse | escalate",
+                "action": "answer | retry | refuse | escalate | clarify",
                 "confidence": "0..1",
                 "reason": "short reason",
                 "customer_confirmation": "optional confirmation text",

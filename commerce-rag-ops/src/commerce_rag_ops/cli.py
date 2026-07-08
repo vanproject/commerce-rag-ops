@@ -18,6 +18,7 @@ from .config import load_dotenv
 from .conversation_store import ConversationStore
 from .etl import load_processed_chunks, persist_processed
 from .entity_memory import EntityResolver, context_resolution_to_legacy_payload, extract_entities_from_state
+from .eval_repair import split_and_repair_humanlike_evalset, write_eval_repair_report
 from .evaluation import (
     evaluate_quality_gates,
     run_ablation,
@@ -125,7 +126,13 @@ def add_eval_backend_args(parser: argparse.ArgumentParser) -> None:
 def build_retriever_backend(args: argparse.Namespace, chunks: list):
     if getattr(args, "backend", "local") == "qdrant":
         embedding_args = resolve_qdrant_embedding_args(args)
-        return QdrantBackend(args.collection, chunks=chunks, path=str(args.qdrant_path), **embedding_args)
+        return QdrantBackend(
+            args.collection,
+            chunks=chunks,
+            path=str(args.qdrant_path),
+            reranker=build_cli_reranker(args),
+            **embedding_args,
+        )
     return HybridRetriever(
         chunks,
         reranker=build_cli_reranker(args),
@@ -143,7 +150,7 @@ def model_config(args: argparse.Namespace) -> dict[str, str]:
         return {
             "embedding_model": embedding_args["embedding_model_name"],
             "embedding_backend": embedding_args["embedding_backend"],
-            "reranker_model": os.getenv("COMMERCE_RAG_RERANKER_MODEL", DEFAULT_RERANKER_MODEL),
+            "reranker_model": getattr(args, "reranker_model", DEFAULT_RERANKER_MODEL),
             "llm_model": llm_model,
         }
     return {
@@ -247,10 +254,26 @@ def cmd_eval(args: argparse.Namespace) -> None:
     report_name = {
         "scripted_regression": "scripted_regression_report.md",
         "humanlike_blind": "humanlike_blind_report.md",
+        "humanlike_single_turn_resolvable": "humanlike_single_turn_resolvable_report.md",
+        "humanlike_context_required": "humanlike_context_required_report.md",
         "challenge": "challenge_report.md",
-    }.get(str(report.get("suite")), "evaluation_report.md")
-    write_eval_report(project_root() / "reports" / report_name, report)
+    }.get(str(report.get("suite")), f"{report.get('suite', 'evaluation')}_report.md")
+    report_path = args.output or project_root() / "reports" / report_name
+    write_eval_report(report_path, report)
     print(json.dumps(report["retrieval"] | report["support_quality"] | report["latency"], indent=2))
+
+
+def cmd_repair_evalsets(args: argparse.Namespace) -> None:
+    report = split_and_repair_humanlike_evalset(
+        data_dir=args.data_dir,
+        source_filename=args.source_filename,
+        resolvable_filename=args.resolvable_filename,
+        context_required_filename=args.context_required_filename,
+        repair_original=not args.keep_original,
+        repair_challenge=not args.skip_challenge,
+    )
+    write_eval_repair_report(project_root() / "reports" / "eval_fairness_repair_report.md", report)
+    print(json.dumps(report, indent=2, ensure_ascii=False))
 
 
 def cmd_ablate(args: argparse.Namespace) -> None:
@@ -725,6 +748,7 @@ def main() -> None:
     eval_cmd.add_argument("--limit", type=int, default=None)
     eval_cmd.add_argument("--eval-filename", default=None, help="Eval JSONL under data/eval; defaults to scripted_regression.jsonl when present")
     eval_cmd.add_argument("--use-oracle-sources", action="store_true", help="Use row['sources'] as an oracle source filter")
+    eval_cmd.add_argument("--output", type=Path, default=None, help="Write markdown report to this path instead of the suite default")
     add_eval_backend_args(eval_cmd)
     add_generator_arg(eval_cmd, default="openai-compatible")
     add_reranker_args(eval_cmd)
@@ -777,6 +801,14 @@ def main() -> None:
     leak.add_argument("--input", type=Path, default=default_data_dir() / "eval" / "humanlike_blind.jsonl")
     leak.add_argument("--docs", type=Path, default=default_data_dir() / "scale" / "rag_documents.jsonl")
     leak.set_defaults(func=cmd_audit_eval_leakage)
+
+    repair_evalsets = sub.add_parser("repair-evalsets", help="Split unfair humanlike rows and repair forbidden_evidence labels")
+    repair_evalsets.add_argument("--source-filename", default="humanlike_blind.jsonl")
+    repair_evalsets.add_argument("--resolvable-filename", default="humanlike_single_turn_resolvable.jsonl")
+    repair_evalsets.add_argument("--context-required-filename", default="humanlike_context_required.jsonl")
+    repair_evalsets.add_argument("--keep-original", action="store_true", help="Do not rewrite the source eval file with repaired rows")
+    repair_evalsets.add_argument("--skip-challenge", action="store_true", help="Do not repair challenge.jsonl forbidden_evidence")
+    repair_evalsets.set_defaults(func=cmd_repair_evalsets)
 
     designed = sub.add_parser("build-designed-evalsets", help="Build V2 heldout evalsets at the designed scale with a real LLM API")
     designed.add_argument("--humanlike-normal", type=int, default=200)

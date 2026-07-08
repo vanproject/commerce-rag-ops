@@ -3,13 +3,16 @@ from __future__ import annotations
 import time
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from .agents import RootRouterAgent, category_hint_for_query, default_domain_agents
 from .advisor import AgentAdvisor, RuleOnlyAdvisor, VALID_ACTIONS, VALID_INTENTS
+from .citation_repair import answer_uses_tool_fact, repair_answer_citations, strip_citations
 from .etl import load_orders, load_products, load_reviews, load_tickets
 from .evidence import CriticVerifier, EvidenceGapAnalyzer, EvidencePackBuilder, Replanner
+from .entity_retrieval import EntityCandidateRetriever, constrain_results_to_entity, should_clarify_for_entity
 from .generator import AnswerGenerator, TemplateAnswerGenerator
 from .citation_quality import validate_citation_contract, validate_tool_citation_contract
 from .models import AgentState, Order, Product, SearchResult, Ticket
@@ -47,6 +50,7 @@ class CommerceRAGAgent:
         self.score_threshold = score_threshold
         self.generator = generator or TemplateAnswerGenerator()
         self.advisor = advisor or RuleOnlyAdvisor()
+        self.entity_retriever = EntityCandidateRetriever(getattr(retriever, "chunks", []))
         self.products = {p.product_id: p for p in load_products(data_dir)}
         self.products_by_sku = {p.sku.lower(): p for p in self.products.values()}
         self.tickets = {t.ticket_id: t for t in load_tickets(data_dir)}
@@ -444,6 +448,17 @@ class CommerceRAGAgent:
             )
             state.answer = final_answer.answer
             state.citations = final_answer.citations
+            repair_result = repair_answer_citations(
+                answer=state.answer,
+                action=state.action,
+                citations=state.citations,
+                tool_citations=state.tool_citations,
+                require_doc_citation=self._must_doc_cite(state),
+                require_tool_citation=answer_uses_tool_fact(state.answer, state.tool_results),
+            )
+            state.answer = repair_result["answer"]
+            state.citations = repair_result["citations"]
+            state.tool_citations = repair_result["tool_citations"]
             state.trace.append(
                 {
                     "event": "generate",
@@ -452,6 +467,7 @@ class CommerceRAGAgent:
                     "latency_ms": final_answer.latency_ms,
                     "generator": self.generator.__class__.__name__,
                     "citations": state.citations,
+                    "citation_repair": repair_result["changes"],
                     "answer_preview": state.answer[:240],
                     "prompt_artifact_id": final_answer.prompt_artifact_id,
                     "span": "answer.generate",
@@ -501,7 +517,7 @@ class CommerceRAGAgent:
             tool_citation_validation = validate_tool_citation_contract(
                 answer=state.answer,
                 tool_citations=state.tool_citations,
-                must_cite=bool(state.tool_citations),
+                must_cite=answer_uses_tool_fact(state.answer, state.tool_results),
             )
             recorder.end_span(tool_citation_span, outputs=tool_citation_validation)
             recorder.add_artifact(
@@ -621,6 +637,14 @@ class CommerceRAGAgent:
             )
             state.llm_advice.setdefault("actions", []).append({"attempt": attempt + 1, **action_advice})
             state.action = self._merge_action_decision(critic_action, action_advice, state, attempt, max_repair_rounds, evidence_gaps)
+            if state.action == "clarify":
+                state.answer = self._clarification_answer(state)
+                state.citations = []
+                state.tool_citations = []
+            elif state.action in {"refuse"}:
+                state.answer = strip_citations(state.answer)
+                state.citations = []
+                state.tool_citations = []
             decision_reason = self._decision_reason(state, attempt, max_repair_rounds, evidence_gaps)
             repair_memory_step = _first_repair_memory_step(state.repair_plan)
             next_query = (
@@ -692,6 +716,8 @@ class CommerceRAGAgent:
                 )
                 refusal_started = time.perf_counter()
                 state.answer, state.citations = self.generator.generate(state, [], weak_retrieval=True), []
+                state.answer = strip_citations(state.answer)
+                state.tool_citations = []
                 recorder.end_span(
                     refusal_span,
                     outputs={"answer_preview": state.answer[:240], "citations": []},
@@ -1043,7 +1069,6 @@ class CommerceRAGAgent:
         if advised_action not in VALID_ACTIONS:
             return rule_action
         hard_refusal_gaps = {
-            "unknown_intent",
             "safety_boundary",
             "privacy_violation",
             "unsafe_commitment",
@@ -1051,8 +1076,14 @@ class CommerceRAGAgent:
         }
         if set(evidence_gaps) & hard_refusal_gaps:
             return rule_action
+        if self._should_clarify_missing_entity(state, evidence_gaps):
+            return "clarify"
+        if "unknown_intent" in evidence_gaps:
+            return rule_action
         if rule_action in {"retry", "refuse"}:
             return rule_action
+        if advised_action == "clarify":
+            return "clarify"
         if advised_action == "refuse":
             return "refuse"
         if advised_action == "escalate" and state.intent == "support":
@@ -1211,14 +1242,67 @@ class CommerceRAGAgent:
         top_k: int,
         candidate_k: int,
     ) -> tuple[list[SearchResult], dict[str, Any]]:
-        self._last_semantic_memory_results = self.retriever.search(
-            query,
+        entity_query = query.split(" structured facts:", 1)[0].strip()
+        candidates = self.entity_retriever.retrieve(entity_query, top_k=5)
+        constrained_product_ids = self._product_constraints_from_query(query)
+        if constrained_product_ids:
+            candidates = [candidate for candidate in candidates if candidate.product_id in constrained_product_ids]
+        selected = candidates[0] if candidates else None
+        retrieval_query = query
+        unique_selected = bool(
+            selected
+            and selected.confidence >= 0.34
+            and (len(candidates) == 1 or selected.confidence - candidates[1].confidence >= 0.08)
+        )
+        if unique_selected:
+            entity_terms = " ".join(
+                item
+                for item in [selected.product_id, selected.sku, selected.title]
+                if item
+            )
+            retrieval_query = f"{query} target product {entity_terms}".strip()
+        results = self.retriever.search(
+            retrieval_query,
             sources=sources,
             top_k=top_k,
             candidate_k=candidate_k,
         )
+        if unique_selected:
+            results = constrain_results_to_entity(results, selected.product_id)[:top_k]
+            if not any(str(result.chunk.metadata.get("product_id", "")).strip() == selected.product_id for result in results):
+                results = self.entity_retriever.evidence_results(selected.product_id, sources=sources, top_k=top_k)
+        self._last_semantic_memory_results = results
         self._last_semantic_memory_diagnostics = dict(getattr(self.retriever, "last_diagnostics", {}) or {})
+        entity_payload = {
+            "query": entity_query,
+            "retrieval_query": retrieval_query,
+            "selected_entity": selected.to_dict() if unique_selected else None,
+            "entity_candidates": [candidate.to_dict() for candidate in candidates],
+            "should_clarify": should_clarify_for_entity(query, candidates),
+        }
+        self._last_semantic_memory_diagnostics["entity_retrieval"] = entity_payload
+        self._last_semantic_memory_diagnostics.setdefault("stages", []).insert(
+            0,
+            {
+                "name": "entity.candidate_retrieval",
+                "duration_ms": 0,
+                "candidate_count": len(candidates),
+                "selected_product_id": entity_payload["selected_entity"]["product_id"] if entity_payload["selected_entity"] else None,
+                "should_clarify": entity_payload["should_clarify"],
+            },
+        )
         return self._last_semantic_memory_results, self._last_semantic_memory_diagnostics
+
+    def _product_constraints_from_query(self, query: str) -> set[str]:
+        constraints: set[str] = set()
+        match = re.search(r"structured facts:.*?products\s+([^;]+)", query, flags=re.IGNORECASE)
+        if not match:
+            return constraints
+        for token in match.group(1).split():
+            value = token.strip(" ,.;")
+            if value:
+                constraints.add(value)
+        return constraints
 
     def _execute_semantic_memory(
         self,
@@ -1289,6 +1373,10 @@ class CommerceRAGAgent:
         state.retrieved_contexts = list(self._last_semantic_memory_results) if memory_tool_result.found else []
         retrieval_ms = int((time.perf_counter() - retrieve_started) * 1000)
         retrieval_diagnostics = self._last_semantic_memory_diagnostics
+        entity_diagnostics = retrieval_diagnostics.get("entity_retrieval", {}) if isinstance(retrieval_diagnostics, dict) else {}
+        state.entity_retrieval = dict(entity_diagnostics)
+        state.entity_candidates = list(entity_diagnostics.get("entity_candidates", []))
+        state.selected_entity = entity_diagnostics.get("selected_entity")
         before_filter_count = len(state.retrieved_contexts)
         state.retrieved_contexts = self._filter_contexts(state.query, state.retrieved_contexts)
         output = {
@@ -1297,6 +1385,7 @@ class CommerceRAGAgent:
             "post_category_filter_contexts": len(state.retrieved_contexts),
             "selected_context_ids": [self._context_id(result) for result in state.retrieved_contexts],
             "doc_citations": [self._citation(result) for result in state.retrieved_contexts[:top_k]],
+            "entity_retrieval": entity_diagnostics,
             "diagnostic_stages": retrieval_diagnostics.get("stages", []),
             "candidate_count": len(retrieval_diagnostics.get("candidates", [])),
             "policy_decision": memory_tool_result.policy_decision,
@@ -1354,6 +1443,7 @@ class CommerceRAGAgent:
                 "post_category_filter_contexts": len(state.retrieved_contexts),
                 "diagnostic_stages": retrieval_diagnostics.get("stages", []),
                 "candidate_count": len(retrieval_diagnostics.get("candidates", [])),
+                "entity_retrieval": entity_diagnostics,
                 "top_contexts": [self._result_trace(r) for r in state.retrieved_contexts[:10]],
             }
         )
@@ -1462,7 +1552,10 @@ class CommerceRAGAgent:
                 filtered.append(result)
                 continue
             product = self.products.get(product_id)
+            metadata_category = str(result.chunk.metadata.get("category", "")).strip()
             if product and self._matches_category(product, category_hint):
+                filtered.append(result)
+            elif not product and metadata_category == category_hint:
                 filtered.append(result)
         return filtered or results
 
@@ -1632,7 +1725,27 @@ class CommerceRAGAgent:
         return top_score < self.score_threshold
 
     def _must_doc_cite(self, state: AgentState) -> bool:
+        if state.action in {"refuse", "clarify"}:
+            return False
         return bool(state.retrieved_contexts) and not self._weak_retrieval(state)
+
+    def _should_clarify_missing_entity(self, state: AgentState, evidence_gaps: list[str]) -> bool:
+        if state.entity_retrieval.get("should_clarify") and state.selected_entity is None:
+            return True
+        if not _query_has_unbound_reference(state.query):
+            return False
+        if self._query_order_ids(state.query) or self._query_skus(state.query):
+            return False
+        if _query_has_product_id(state.query):
+            return False
+        if _has_unique_memory_entity(state):
+            return False
+        return True
+
+    def _clarification_answer(self, state: AgentState) -> str:
+        if "order" in tokenize(state.query) or state.intent == "sku_order":
+            return "Please provide the order ID, SKU, or product name so I can look up the right item before answering."
+        return "Please provide the product name, SKU, or order ID so I can answer about the correct item."
 
     def _evidence_gaps(self, state: AgentState) -> list[str]:
         return self.gap_analyzer.gaps(state)
@@ -1688,6 +1801,8 @@ class CommerceRAGAgent:
             if self._weak_retrieval(state):
                 return "refuse because retrieval remained below confidence threshold after retries"
             return f"refuse because critical evidence gaps remained: {evidence_gaps}"
+        if state.action == "clarify":
+            return "clarify because the query contains an unbound reference and no unique product, SKU, or order is available"
         if state.action == "escalate":
             return "escalate because high-risk support answer lacks required grounded policy evidence"
         return "answer because required evidence contract is satisfied"
@@ -1798,6 +1913,58 @@ def _span_kind_for_stage(stage_name: str) -> str:
     if "diversify" in stage_name or "forced" in stage_name:
         return "filter"
     return "retrieval"
+
+
+def _query_has_unbound_reference(query: str) -> bool:
+    q = f" {normalize_text(query).lower()} "
+    patterns = [
+        r"\bthis\s+(?:item|product|app|baby item|beauty item|digital purchase|nap mat)\b",
+        r"\bthat\s+(?:item|product|app|thing)\b",
+        r"\bthe\s+item\b",
+        r"\bsame\s+product\b",
+        r"\bproduct\s+we\s+discussed\s+earlier\b",
+        r"\bcomplaints\s+about\s+it\b",
+    ]
+    return any(re.search(pattern, q) for pattern in patterns)
+
+
+def _query_has_product_id(query: str) -> bool:
+    return bool(re.search(r"\bB[0-9A-Z]{9}\b|\bP-[A-Z]+-\d+\b", query, flags=re.IGNORECASE))
+
+
+def _has_unique_memory_entity(state: AgentState) -> bool:
+    entities: set[tuple[str, str]] = set()
+    for item in state.resolved_entities:
+        entity_type = str(item.get("entity_type") or item.get("type") or "")
+        entity_value = str(item.get("entity_value") or item.get("value") or "")
+        if entity_type in {"product_id", "sku", "order_id"} and entity_value:
+            entities.add((entity_type, entity_value))
+    active = state.memory_context.get("active_entities", {})
+    if isinstance(active, dict):
+        for entity_type in ["product_id", "sku", "order_id"]:
+            value = active.get(entity_type)
+            if isinstance(value, str) and value.strip():
+                entities.add((entity_type, value.strip()))
+    return len({value for _, value in entities}) == 1
+
+
+def _has_unique_structured_entity(state: AgentState) -> bool:
+    product_ids = {
+        str(product.get("product_id", "")).strip()
+        for product in state.tool_results.get("products", [])
+        if product.get("product_id")
+    }
+    product_ids.update(
+        str(order.get("product_id", "")).strip()
+        for order in state.tool_results.get("orders", [])
+        if order.get("product_id")
+    )
+    order_ids = {
+        str(order.get("order_id", "")).strip()
+        for order in state.tool_results.get("orders", [])
+        if order.get("order_id")
+    }
+    return len(product_ids | order_ids) == 1
 
 
 def _content_hash(text: str) -> str:
@@ -1920,4 +2087,3 @@ def _first_repair_memory_step(repair_plan: dict[str, Any]) -> dict[str, Any]:
 
 def answer_contains_keywords(answer: str, expected_keywords: list[str]) -> float:
     return keyword_coverage(answer, expected_keywords)
-
