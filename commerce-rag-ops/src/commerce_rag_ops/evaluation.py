@@ -186,9 +186,10 @@ def run_evaluation(
         )
 
         started = time.perf_counter()
-        state = agent.run(row["query"], max_retries=1)
+        state = agent.run(row["query"], max_retries=1, memory_context={"eval_context": _eval_context_for_row(row)})
         latencies.append(int((time.perf_counter() - started) * 1000))
         evidence_gaps = _state_evidence_gaps(state)
+        hard_negative = _state_hard_negative_summary(state)
         citation_contract = validate_citation_contract(
             answer=state.answer,
             citations=state.citations,
@@ -206,6 +207,8 @@ def run_evaluation(
                 "action": state.action,
                 "attempts": state.attempts,
                 "evidence_gaps": evidence_gaps,
+                "hard_negative_hit_rate": hard_negative["hard_negative_hit_rate"],
+                "hard_negative_penalized_count": hard_negative["penalized_count"],
                 "action_accuracy": 1.0 if state.action == row.get("expected_action", "answer") else 0.0,
                 "citation_ok": 1.0 if state.citations or not row.get("must_cite", True) else 0.0,
                 "citation_leak_rate": _citation_leak_rate(state, row, citation_contract),
@@ -431,6 +434,15 @@ def _default_scripted_eval_path(data_dir: Path, eval_filename: str | None) -> Pa
     return data_dir / "eval" / "golden.jsonl"
 
 
+def _eval_context_for_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "query_id": row.get("query_id"),
+        "target_entities": row.get("target_entities") or row.get("expected_sql_entities") or {},
+        "required_evidence": row.get("required_evidence") or {},
+        "forbidden_evidence": row.get("forbidden_evidence") or {},
+    }
+
+
 def _suite_name(eval_path: Path) -> str:
     if eval_path.name == "scripted_regression.jsonl":
         return "scripted_regression"
@@ -642,6 +654,17 @@ def _state_evidence_gaps(state: Any) -> list[str]:
     return gaps
 
 
+def _state_hard_negative_summary(state: Any) -> dict[str, Any]:
+    latest: dict[str, Any] = {}
+    for event in state.trace:
+        if event.get("event") == "retrieve" and isinstance(event.get("hard_negative_rerank"), dict):
+            latest = event["hard_negative_rerank"]
+    return {
+        "hard_negative_hit_rate": float(latest.get("hard_negative_hit_rate", 0.0) or 0.0),
+        "penalized_count": int(latest.get("penalized_count", 0) or 0),
+    }
+
+
 def _agentic_diagnostic_summary(support_rows: list[dict[str, Any]]) -> dict[str, Any]:
     action_counts = Counter(str(row.get("action", "unknown")) for row in support_rows)
     attempt_counts = Counter(str(row.get("attempts", 0)) for row in support_rows)
@@ -649,10 +672,14 @@ def _agentic_diagnostic_summary(support_rows: list[dict[str, Any]]) -> dict[str,
     citation_failure_counts: Counter[str] = Counter()
     gaps_by_intent: dict[str, Counter[str]] = defaultdict(Counter)
     retried = 0
+    hard_negative_hits = 0.0
+    hard_negative_penalized = 0
     for row in support_rows:
         attempts = int(row.get("attempts", 0))
         if attempts > 1:
             retried += 1
+        hard_negative_hits += float(row.get("hard_negative_hit_rate", 0.0) or 0.0)
+        hard_negative_penalized += int(row.get("hard_negative_penalized_count", 0) or 0)
         intent = str(row.get("expected_intent", row.get("intent", "unknown")))
         for gap in row.get("evidence_gaps", []):
             gap_counts[str(gap)] += 1
@@ -663,6 +690,8 @@ def _agentic_diagnostic_summary(support_rows: list[dict[str, Any]]) -> dict[str,
         "action_counts": dict(sorted(action_counts.items())),
         "attempt_counts": dict(sorted(attempt_counts.items())),
         "retry_rate": round(retried / len(support_rows), 4) if support_rows else 0.0,
+        "hard_negative_hit_rate": round(hard_negative_hits / len(support_rows), 4) if support_rows else 0.0,
+        "hard_negative_penalized_count": hard_negative_penalized,
         "evidence_gap_counts": dict(sorted(gap_counts.items())),
         "citation_failure_counts": dict(sorted(citation_failure_counts.items())),
         "evidence_gaps_by_intent": {
@@ -871,6 +900,8 @@ def write_eval_report(report_path: Path, report: dict[str, Any]) -> None:
             "## Agentic 证据诊断",
             "",
             f"- 重试率: {agentic.get('retry_rate', 0.0)}",
+            f"- hard_negative_hit_rate: {agentic.get('hard_negative_hit_rate', 0.0)}",
+            f"- hard_negative_penalized_count: {agentic.get('hard_negative_penalized_count', 0)}",
             "",
             "### 动作与尝试次数",
             "",

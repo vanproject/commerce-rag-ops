@@ -101,6 +101,7 @@ class AgentState:
     trace_id: str = ""
     original_query: str | None = None
     memory_context: dict[str, Any] = field(default_factory=dict)
+    eval_context: dict[str, Any] = field(default_factory=dict)
     resolved_entities: list[dict[str, Any]] = field(default_factory=list)
     context_resolution: dict[str, Any] = field(default_factory=dict)
     llm_advice: dict[str, Any] = field(default_factory=dict)

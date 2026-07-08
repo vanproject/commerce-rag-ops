@@ -288,3 +288,60 @@ Observed `humanlike_single_turn_resolvable` local weak-retrieval first-10:
 Known limitation:
 
 - The plan is rule-based. It does not yet use a real LLM planner, and hard-negative rerank penalties are still pending.
+
+## P2 Hard-Negative Rerank Pass
+
+Added:
+
+- `AgentState.eval_context`
+- Eval-only injection of `target_entities`, `required_evidence`, and `forbidden_evidence`
+- Hard-negative post-rerank over semantic memory results
+- Report diagnostics: `hard_negative_hit_rate` and `hard_negative_penalized_count`
+
+Design:
+
+- Normal `ask` calls do not receive eval labels.
+- Evaluation calls pass row-level `forbidden_evidence` into `memory_context.eval_context`.
+- Semantic memory penalizes chunks whose `product_id` appears in `wrong_product_ids` by `2.0`.
+- Semantic memory penalizes chunks whose aspect intersects `wrong_aspects` by `1.0`.
+- The rerank output keeps diagnostics in retrieval trace and agentic report summaries.
+
+Verification:
+
+```bash
+python -m compileall src
+pytest tests/test_core.py -q -k "hard_negative or entity_candidate or eval_runs"
+pytest -q
+```
+
+Observed:
+
+- Focused hard-negative/entity/eval tests: `5 passed`
+- Full regression after hard-negative pass: `47 passed`
+
+Real LLM smoke after hard-negative pass:
+
+```bash
+python -m commerce_rag_ops.cli eval --eval-filename humanlike_context_required.jsonl --generator openai-compatible --reranker-model none --limit 10 --output reports/humanlike_context_required_report.md
+python -m commerce_rag_ops.cli eval --eval-filename challenge.jsonl --generator openai-compatible --reranker-model none --limit 10 --output reports/challenge_local_report.md
+```
+
+Observed `humanlike_context_required` first-10:
+
+- `action_accuracy`: 1.0
+- `citation_leak_rate`: 0.0
+- `citation_schema_ok`: 1.0
+
+Observed `challenge` local weak-retrieval first-10:
+
+- `exact_recall@5`: 0.0
+- `acceptable_recall@5`: 0.0
+- `entity_accuracy@5`: 0.0
+- `forbidden_rate@5`: 0.02
+- `action_accuracy`: 0.1
+- `citation_schema_ok`: 0.3
+
+Interpretation:
+
+- The local weak-retrieval challenge smoke remains far below target; this still needs strong retrieval and better entity disambiguation.
+- The report now exposes `hard_negative_hit_rate` and `hard_negative_penalized_count`. This smoke did not hit a penalized agent context, but the deterministic unit test covers the penalty path.

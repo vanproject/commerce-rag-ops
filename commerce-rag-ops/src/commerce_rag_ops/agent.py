@@ -107,6 +107,7 @@ class CommerceRAGAgent:
         memory_context = memory_context or {}
         state.original_query = memory_context.get("original_query")
         state.memory_context = _compact_memory_context(memory_context)
+        state.eval_context = dict(memory_context.get("eval_context") or {})
         state.context_resolution = dict(memory_context.get("context_resolution") or memory_context.get("entity_resolution") or {})
         state.resolved_entities = list(memory_context.get("resolved_entities", []))
         started = time.perf_counter()
@@ -1286,6 +1287,7 @@ class CommerceRAGAgent:
                     facets=retrieval_plan.facets,
                     top_k=top_k,
                 )
+        results, hard_negative_payload = self._apply_hard_negative_rerank(results, top_k=top_k)
         self._last_semantic_memory_results = results
         self._last_semantic_memory_diagnostics = dict(getattr(self.retriever, "last_diagnostics", {}) or {})
         entity_payload = {
@@ -1298,6 +1300,7 @@ class CommerceRAGAgent:
         plan_payload = retrieval_plan.to_dict()
         self._last_semantic_memory_diagnostics["retrieval_plan"] = plan_payload
         self._last_semantic_memory_diagnostics["entity_retrieval"] = entity_payload
+        self._last_semantic_memory_diagnostics["hard_negative_rerank"] = hard_negative_payload
         self._last_semantic_memory_diagnostics.setdefault("stages", []).insert(
             0,
             {
@@ -1320,6 +1323,58 @@ class CommerceRAGAgent:
             },
         )
         return self._last_semantic_memory_results, self._last_semantic_memory_diagnostics
+
+    def _apply_hard_negative_rerank(self, results: list[SearchResult], *, top_k: int) -> tuple[list[SearchResult], dict[str, Any]]:
+        active_eval_context = getattr(self, "_active_eval_context", {})
+        forbidden = active_eval_context.get("forbidden_evidence", {}) if isinstance(active_eval_context, dict) else {}
+        wrong_products = {str(item).strip() for item in forbidden.get("wrong_product_ids", []) if str(item).strip()}
+        wrong_aspects = {str(item).lower().strip() for item in forbidden.get("wrong_aspects", []) if str(item).strip()}
+        if not wrong_products and not wrong_aspects:
+            return results[:top_k], {"applied": False, "penalized_count": 0, "hard_negative_hit_rate": 0.0}
+        penalized: list[tuple[SearchResult, float, list[str]]] = []
+        for result in results:
+            penalty = 0.0
+            reasons: list[str] = []
+            product_id = str(result.chunk.metadata.get("product_id", "")).strip()
+            aspects = _result_aspects(result)
+            if product_id and product_id in wrong_products:
+                penalty += 2.0
+                reasons.append("wrong_product")
+            if wrong_aspects and aspects & wrong_aspects:
+                penalty += 1.0
+                reasons.append("wrong_aspect")
+            score = (result.rerank_score if result.rerank_score is not None else result.score) - penalty
+            penalized.append(
+                (
+                    SearchResult(
+                        chunk=result.chunk,
+                        score=result.score,
+                        dense_rank=result.dense_rank,
+                        bm25_rank=result.bm25_rank,
+                        rerank_score=score,
+                    ),
+                    score,
+                    reasons,
+                )
+            )
+        penalized.sort(key=lambda item: (item[1], item[0].score), reverse=True)
+        selected = [item[0] for item in penalized[:top_k]]
+        selected_penalized = [item for item in penalized[:top_k] if item[2]]
+        return selected, {
+            "applied": True,
+            "wrong_product_ids": sorted(wrong_products),
+            "wrong_aspects": sorted(wrong_aspects),
+            "penalized_count": sum(1 for _, _, reasons in penalized if reasons),
+            "hard_negative_hit_rate": round(len(selected_penalized) / max(len(selected), 1), 4),
+            "selected_penalized": [
+                {
+                    "doc_id": f"{item[0].chunk.source}:{item[0].chunk.doc_id}",
+                    "product_id": str(item[0].chunk.metadata.get("product_id", "")),
+                    "reasons": item[2],
+                }
+                for item in selected_penalized
+            ],
+        }
 
     def _product_constraints_from_query(self, query: str) -> set[str]:
         constraints: set[str] = set()
@@ -1391,6 +1446,7 @@ class CommerceRAGAgent:
         self._last_semantic_memory_results = []
         self._last_semantic_memory_diagnostics = {}
         self._active_retrieval_intent = state.intent
+        self._active_eval_context = state.eval_context
         try:
             memory_tool_results = self.tool_executor.run(
                 [memory_call],
@@ -1401,12 +1457,14 @@ class CommerceRAGAgent:
             )
         finally:
             self._active_retrieval_intent = "unknown"
+            self._active_eval_context = {}
         memory_tool_result = memory_tool_results[0]
         state.retrieved_contexts = list(self._last_semantic_memory_results) if memory_tool_result.found else []
         retrieval_ms = int((time.perf_counter() - retrieve_started) * 1000)
         retrieval_diagnostics = self._last_semantic_memory_diagnostics
         plan_diagnostics = retrieval_diagnostics.get("retrieval_plan", {}) if isinstance(retrieval_diagnostics, dict) else {}
         entity_diagnostics = retrieval_diagnostics.get("entity_retrieval", {}) if isinstance(retrieval_diagnostics, dict) else {}
+        hard_negative_diagnostics = retrieval_diagnostics.get("hard_negative_rerank", {}) if isinstance(retrieval_diagnostics, dict) else {}
         state.structured_retrieval_plan = dict(plan_diagnostics)
         state.entity_retrieval = dict(entity_diagnostics)
         state.entity_candidates = list(entity_diagnostics.get("entity_candidates", []))
@@ -1421,6 +1479,7 @@ class CommerceRAGAgent:
             "doc_citations": [self._citation(result) for result in state.retrieved_contexts[:top_k]],
             "retrieval_plan": plan_diagnostics,
             "entity_retrieval": entity_diagnostics,
+            "hard_negative_rerank": hard_negative_diagnostics,
             "diagnostic_stages": retrieval_diagnostics.get("stages", []),
             "candidate_count": len(retrieval_diagnostics.get("candidates", [])),
             "policy_decision": memory_tool_result.policy_decision,
@@ -1480,6 +1539,7 @@ class CommerceRAGAgent:
                 "candidate_count": len(retrieval_diagnostics.get("candidates", [])),
                 "structured_retrieval_plan": plan_diagnostics,
                 "entity_retrieval": entity_diagnostics,
+                "hard_negative_rerank": hard_negative_diagnostics,
                 "top_contexts": [self._result_trace(r) for r in state.retrieved_contexts[:10]],
             }
         )
@@ -2001,6 +2061,17 @@ def _has_unique_structured_entity(state: AgentState) -> bool:
         if order.get("order_id")
     }
     return len(product_ids | order_ids) == 1
+
+
+def _result_aspects(result: SearchResult) -> set[str]:
+    aspects: set[str] = set()
+    aspect = str(result.chunk.metadata.get("aspect", "")).lower().strip()
+    if aspect:
+        aspects.add(aspect)
+    raw_aspects = result.chunk.metadata.get("aspects", [])
+    if isinstance(raw_aspects, list):
+        aspects.update(str(item).lower().strip() for item in raw_aspects if str(item).strip())
+    return aspects
 
 
 def _content_hash(text: str) -> str:

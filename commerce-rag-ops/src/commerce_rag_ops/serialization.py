@@ -9,6 +9,7 @@ def agent_state_to_dict(state: AgentState) -> dict:
         "query": state.query,
         "original_query": state.original_query,
         "memory_context": state.memory_context,
+        "eval_context": state.eval_context,
         "resolved_entities": state.resolved_entities,
         "context_resolution": state.context_resolution,
         "llm_advice": state.llm_advice,

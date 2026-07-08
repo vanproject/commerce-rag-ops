@@ -531,6 +531,47 @@ def test_entity_candidate_retrieval_completes_required_facet_evidence():
     ]
 
 
+def test_agent_hard_negative_rerank_penalizes_eval_forbidden_product():
+    target = DocumentChunk(
+        chunk_id="target",
+        source="product",
+        doc_id="PP-All_Beauty-B08P2DZB4X",
+        text="NIRA laser device product profile with battery life.",
+        metadata={"doc_type": "product_profile", "product_id": "B08P2DZB4X", "title": "nira laser device"},
+    )
+    wrong = DocumentChunk(
+        chunk_id="wrong",
+        source="product",
+        doc_id="PP-All_Beauty-B000067E30",
+        text="Crest whitening strips product profile.",
+        metadata={"doc_type": "product_profile", "product_id": "B000067E30", "title": "crest whitestrips"},
+    )
+
+    class RankedRetriever:
+        chunks = [target, wrong]
+
+        def search(self, query, *, sources=None, top_k=5, candidate_k=30, mode="hybrid_rerank"):
+            self.last_diagnostics = {"query": query, "stages": [], "candidates": []}
+            return [
+                SearchResult(wrong, score=0.95, rerank_score=0.95),
+                SearchResult(target, score=0.6, rerank_score=0.6),
+            ]
+
+    agent = CommerceRAGAgent(RankedRetriever(), DATA_DIR)
+    agent._active_eval_context = {"forbidden_evidence": {"wrong_product_ids": ["B000067E30"]}}
+    results, diagnostics = agent._apply_hard_negative_rerank(
+        [
+            SearchResult(wrong, score=0.95, rerank_score=0.95),
+            SearchResult(target, score=0.6, rerank_score=0.6),
+        ],
+        top_k=2,
+    )
+
+    assert [result.chunk.metadata["product_id"] for result in results] == ["B08P2DZB4X", "B000067E30"]
+    assert diagnostics["penalized_count"] == 1
+    assert diagnostics["hard_negative_hit_rate"] == 0.5
+
+
 def test_eval_row_repair_removes_target_from_forbidden_products():
     row = {
         "query_id": "H-test",
