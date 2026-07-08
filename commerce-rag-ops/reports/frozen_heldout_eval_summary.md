@@ -1,17 +1,29 @@
 # Frozen Heldout Eval Summary
 
-This report summarizes the designed-scale heldout eval run with real OpenAI-compatible LLM calls. Generation, answer production, and LLM-as-Judge used `deepseek-v4-flash`; no template generator was used. Retrieval used the local backend with `--reranker-model none`.
+This report summarizes the current frozen/designed heldout artifacts already written under `reports/`.
+All referenced eval reports were generated with real `openai-compatible` LLM calls; no template generator is used for heldout results.
 
 ## Retrieval / Support Eval
 
-| Split | N | exact_recall@5 | acceptable_recall@5 | entity_accuracy@5 | aspect_accuracy@5 | forbidden_rate@5 | Report |
-|---|---:|---:|---:|---:|---:|---:|---|
-| humanlike_blind | 200 | 0.06 | 0.125 | 0.13 | 0.65 | 0.05 | `reports/humanlike_blind_report.md` |
-| challenge | 100 | 0.05 | 0.08 | 0.08 | 0.48 | 0.0185 | `reports/challenge_report.md` |
+| Split | Scope | N | backend | embedding | reranker | llm | exact@5 | acceptable@5 | entity@5 | aspect@5 | forbidden@5 | action_acc | citation_schema | Report |
+|---|---|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| humanlike_blind | historical-full | 200 | local | local-token-cosine | none | deepseek-v4-flash | 0.06 | 0.125 | 0.13 | 0.65 | 0.05 | n/a | 0.175 | `reports/humanlike_blind_report.md` |
+| humanlike_single_turn_resolvable | smoke | 10 | local | local-token-cosine | none | deepseek-v4-flash | 0.3 | 0.3 | 0.3 | 0.7 | 0.0 | 0.7 | 0.7 | `reports/humanlike_single_turn_resolvable_report.md` |
+| humanlike_context_required | smoke | 10 | local | local-token-cosine | none | deepseek-v4-flash | 0.0 | 0.0 | 0.0 | 0.8 | 0.04 | 1.0 | 1.0 | `reports/humanlike_context_required_report.md` |
+| challenge | full | 100 | local | local-token-cosine | none | deepseek-v4-flash | 0.05 | 0.08 | 0.08 | 0.48 | 0.0185 | n/a | 0.46 | `reports/challenge_report.md` |
+
+## Strong Retrieval Smoke Matrix
+
+These rows are smoke runs, not full heldout runs; they are kept separate until the full matrix is regenerated.
+
+| Split | Profile | Scope | N | backend | embedding | reranker | llm | exact@5 | acceptable@5 | entity@5 | aspect@5 | forbidden@5 | action_acc | citation_schema | Report |
+|---|---|---|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| humanlike_single_turn_resolvable | qdrant+bge+reranker | smoke | 10 | qdrant | BAAI/bge-large-en-v1.5 | BAAI/bge-reranker-large | deepseek-v4-flash | 0.5 | 0.6 | 0.6 | 0.8 | 0.0 | 0.7 | 0.7 | `reports/humanlike_single_turn_resolvable_qdrant_bge_reranker_report.md` |
+| challenge | qdrant+bge+reranker | smoke | 10 | qdrant | BAAI/bge-large-en-v1.5 | BAAI/bge-reranker-large | deepseek-v4-flash | 0.1 | 0.1 | 0.1 | 0.6 | 0.2 | 0.1 | 0.3 | `reports/challenge_qdrant_bge_reranker_report.md` |
 
 ## Answer Groundedness
 
-| Split | N | Judge model | Business QA Pass Rate | final_groundedness_pass_rate | claim_support_rate | unsupported_claim_rate | citation_schema_pass_rate | required_facet_pass_rate | Report |
+| Split | N | Judge model | Business QA Pass | final_groundedness | claim_support | unsupported_claim | citation_schema | required_facet | Report |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---|
 | humanlike_blind | 200 | deepseek-v4-flash | 0.005 | 0.005 | 0.9155 | 0.0279 | 0.205 | 0.495 | `reports/humanlike_blind_groundedness_report.md` |
 | challenge | 100 | deepseek-v4-flash | 0.09 | 0.11 | 0.87 | 0.0443 | 0.52 | 0.53 | `reports/challenge_groundedness_report.md` |
@@ -20,24 +32,11 @@ This report summarizes the designed-scale heldout eval run with real OpenAI-comp
 
 | Split | N | Key metrics | Report |
 |---|---:|---|---|
-| refusal_safety_heldout | 50 | pass_rate=0.82, refusal_rate=0.82, citation_leak_rate=0.18 | `reports/refusal_eval_report.md` |
-| multiturn_memory_heldout | 50 | carryover=1.0, wrong_entity_leak=0.0, privacy_block=1.0, success=0.58 | `reports/memory_heldout_report.md` |
-
-## Artifacts
-
-| Artifact | Path |
-|---|---|
-| Humanlike retrieval/support report | `reports/humanlike_blind_report.md` |
-| Challenge retrieval/support report | `reports/challenge_report.md` |
-| Humanlike groundedness report | `reports/humanlike_blind_groundedness_report.md` |
-| Challenge groundedness report | `reports/challenge_groundedness_report.md` |
-| Humanlike groundedness rows | `reports/humanlike_blind_groundedness_rows.jsonl` |
-| Challenge groundedness rows | `reports/challenge_groundedness_rows.jsonl` |
-| Refusal/safety report | `reports/refusal_eval_report.md` |
-| Multi-turn memory heldout report | `reports/memory_heldout_report.md` |
+| refusal_safety_heldout | 50 | pass_rate=1.0, refusal_rate=1.0, citation_leak_rate=0.0 | `reports/refusal_eval_report.md` |
+| multiturn_memory_heldout | 50 | carryover=0.8000, wrong_entity_leak=0.0000, privacy_block=1.0000, success=0.8400 | `reports/memory_eval_report.md` |
 
 ## Notes
 
-- Groundedness rows were written incrementally so the run could survive API interruptions and resume without using template/mock substitutes.
-- Low Business QA Pass is mainly driven by blind retrieval and citation/facet failures. Judge claim support is comparatively high, but citation schema pass and required facet pass are low.
-- These heldout results should be treated as the main quality signal; the old scripted regression benchmark remains useful only for engineering regression.
+- `humanlike_blind` remains in this table for historical comparability; post-repair primary single-turn quality should focus on `humanlike_single_turn_resolvable` and `humanlike_context_required`.
+- Strong retrieval rows currently present are smoke runs. Full local/BGE/BGE+reranker/Qdrant matrix regeneration remains open.
+- Groundedness rows are older full heldout judge runs and still show the remaining citation/facet/action-contract gap.

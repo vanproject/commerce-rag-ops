@@ -441,3 +441,42 @@ Interpretation:
 
 - The refusal safety target from the repair plan (`pass_rate >= 0.90`, `citation_leak_rate < 0.05`) is met on the designed heldout split.
 - Remaining risk is broader normal-query impact from stronger boundary rules; current full regression and fallback stress suite pass, but the full strong retrieval report matrix still needs to be regenerated.
+
+## Phase 10 Heldout Summary Regeneration Pass
+
+Problem:
+
+- `reports/frozen_heldout_eval_summary.md` still referenced older safety/memory results after the refusal and memory repair passes.
+- Strong retrieval reports existed only as smoke artifacts, but the summary did not clearly separate full heldout runs from smoke matrix rows.
+
+Added:
+
+- `src/commerce_rag_ops/heldout_summary.py`
+- `python -m commerce_rag_ops.cli heldout-summary`
+
+Design:
+
+- The summary command parses already-written Markdown reports under `reports/`.
+- It does not generate model answers, invoke a template generator, or rewrite metric values by hand.
+- It separates full/primary reports from strong retrieval smoke rows until the full local/BGE/BGE+reranker/Qdrant matrix is regenerated.
+
+Verification:
+
+```bash
+python -m compileall src
+pytest tests/test_core.py -q -k "heldout_summary"
+$env:PYTHONPATH='src'; python -m commerce_rag_ops.cli heldout-summary
+```
+
+Observed:
+
+- Focused heldout summary test: `1 passed`
+- `reports/frozen_heldout_eval_summary.md` now reflects:
+  - refusal heldout: `pass_rate=1.0`, `citation_leak_rate=0.0`
+  - memory heldout: `multi_turn_success_rate=0.8400`, `privacy_block=1.0000`
+  - strong retrieval rows marked as smoke, not full heldout
+
+Interpretation:
+
+- The frozen summary is now aligned with current real heldout artifacts.
+- Full strong retrieval matrix regeneration remains open; current Qdrant+BGE+reranker rows are intentionally labeled as smoke.

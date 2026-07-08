@@ -31,6 +31,7 @@ from .evaluation import (
 )
 from .fallback_stress import run_fallback_stress, write_fallback_stress_report
 from .generator import DEFAULT_LLM_MODEL, build_generator, check_openai_compatible_llm
+from .heldout_summary import build_frozen_heldout_summary, write_frozen_heldout_summary
 from .humanlike_eval import audit_eval_leakage, build_designed_evalsets, build_humanlike_evalset, write_leakage_report
 from .importers import download_amazon_reviews_full, import_amazon_reviews_sample
 from .llm_judge import run_llm_judge_evaluation, write_llm_judge_report
@@ -676,6 +677,13 @@ def cmd_tool_eval(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_heldout_summary(args: argparse.Namespace) -> None:
+    report = build_frozen_heldout_summary(project_root() / "reports")
+    output = args.output or project_root() / "reports" / "frozen_heldout_eval_summary.md"
+    write_frozen_heldout_summary(output, report)
+    print(json.dumps({"output": str(output), "retrieval_rows": len(report["retrieval"])}, indent=2, ensure_ascii=False))
+
+
 def _format_span_tree(spans: list[dict]) -> str:
     by_parent: dict[str | None, list[dict]] = {}
     by_id = {span["span_id"]: span for span in spans}
@@ -944,6 +952,10 @@ def main() -> None:
     add_eval_backend_args(tool_eval)
     add_reranker_args(tool_eval)
     tool_eval.set_defaults(func=cmd_tool_eval)
+
+    heldout_summary = sub.add_parser("heldout-summary", help="Regenerate frozen heldout summary from existing reports")
+    heldout_summary.add_argument("--output", type=Path, default=None)
+    heldout_summary.set_defaults(func=cmd_heldout_summary)
 
     args = parser.parse_args()
     args.func(args)

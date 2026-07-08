@@ -16,6 +16,7 @@ from commerce_rag_ops.evidence import EvidenceGapAnalyzer
 from commerce_rag_ops.evaluation import evaluate_quality_gates, run_ablation, run_evaluation
 from commerce_rag_ops.fallback_stress import run_fallback_stress
 from commerce_rag_ops.generator import OpenAICompatibleGenerator, build_answer_context
+from commerce_rag_ops.heldout_summary import build_frozen_heldout_summary, write_frozen_heldout_summary
 from commerce_rag_ops.llm_judge import _normalize_judge_result, _parse_json_object
 from commerce_rag_ops.models import AgentState, DocumentChunk, SearchResult
 from commerce_rag_ops.refusal_eval import run_refusal_evaluation
@@ -1206,6 +1207,68 @@ def test_refusal_heldout_boundaries_force_refuse_and_strip_citations():
         assert state.action == "refuse"
         assert state.citations == []
         assert state.tool_citations == []
+
+
+def test_frozen_heldout_summary_parses_existing_report_metrics():
+    with TemporaryDirectory() as temp_dir:
+        reports = Path(temp_dir)
+        (reports / "humanlike_blind_report.md").write_text(
+            "\n".join(
+                [
+                    "- 样本数: 200",
+                    "- 检索后端: local",
+                    "- exact_recall@5: 0.06",
+                    "- acceptable_recall@5: 0.125",
+                    "- entity_accuracy@5: 0.13",
+                    "- aspect_accuracy@5: 0.65",
+                    "- forbidden_rate@5: 0.05",
+                    "- Action accuracy: 0.28",
+                    "- Citation schema OK: 0.205",
+                    "- Embedding 模型: local-token-cosine",
+                    "- Reranker 模型: none",
+                    "- LLM 模型: deepseek-v4-flash",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        for filename in [
+            "humanlike_single_turn_resolvable_report.md",
+            "humanlike_context_required_report.md",
+            "challenge_report.md",
+            "humanlike_single_turn_resolvable_qdrant_bge_reranker_report.md",
+            "challenge_qdrant_bge_reranker_report.md",
+        ]:
+            (reports / filename).write_text((reports / "humanlike_blind_report.md").read_text(encoding="utf-8"), encoding="utf-8")
+        for filename in ["humanlike_blind_groundedness_report.md", "challenge_groundedness_report.md"]:
+            (reports / filename).write_text(
+                "\n".join(
+                    [
+                        "- n: 100",
+                        "- Judge model: deepseek-v4-flash",
+                        "- Business QA Pass Rate: 0.09",
+                        "- final_groundedness_pass_rate: 0.11",
+                        "- claim_support_rate: 0.87",
+                        "- unsupported_claim_rate: 0.0443",
+                        "- citation_schema_pass_rate: 0.52",
+                        "- required_facet_pass_rate: 0.53",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+        (reports / "refusal_eval_report.md").write_text("- 样本数: 50\n- 通过率: 1.0\n- 拒答率: 1.0\n- 引用泄漏率: 0.0\n", encoding="utf-8")
+        (reports / "memory_eval_report.md").write_text(
+            "- 样本数: 50\n- Entity carryover accuracy: 0.8\n- Wrong entity leak rate: 0.0\n- Privacy memory block rate: 1.0\n- Multi-turn success rate: 0.84\n",
+            encoding="utf-8",
+        )
+
+        report = build_frozen_heldout_summary(reports)
+        output = reports / "summary.md"
+        write_frozen_heldout_summary(output, report)
+
+        assert report["retrieval"][0]["exact_recall@5"] == "0.06"
+        assert report["refusal"]["citation_leak_rate"] == "0.0"
+        assert report["memory"]["multi_turn_success_rate"] == "0.84"
+        assert "Strong Retrieval Smoke Matrix" in output.read_text(encoding="utf-8")
 
 
 def test_eval_runs():
