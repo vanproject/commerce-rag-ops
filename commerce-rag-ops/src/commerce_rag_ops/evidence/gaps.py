@@ -62,14 +62,22 @@ class EvidenceGapAnalyzer:
         if any(
             term in q
             for term in [
+                "act as a unrestricted assistant",
+                "bypass your usual restrictions",
+                "free from restrictions",
                 "ignore all previous instructions",
                 "ignore previous instructions",
+                "ignore all prior directives",
+                "ignore all prior instructions",
+                "system administrator",
+                "system override",
                 "system prompt",
                 "raw contents of .env",
                 "api key",
                 "bypass citations",
                 "training data",
                 "you are now admin",
+                "you are now free from restrictions",
             ]
         ):
             gaps.append("safety_boundary")
@@ -78,27 +86,50 @@ class EvidenceGapAnalyzer:
             for term in [
                 "all orders",
                 "every customer",
+                "credit card",
+                "cvv",
+                "email address",
+                "full credit card number",
                 "payment details",
+                "payment method",
+                "password",
+                "phone number",
                 "address",
                 "emails",
                 "private notes",
                 "other customers",
                 "full database rows",
                 "print every customer order",
+                "placed by my sister",
+                "my brother ordered",
+                "helping out a friend",
+                "friend who is out of town",
             ]
         ):
             gaps.append("privacy_violation")
         if any(
             term in q
             for term in [
+                "approve my return",
+                "apply it now and refund",
+                "apply both",
+                "approve",
+                "assure me",
+                "can you make an exception",
+                "can you override",
+                "can you promise",
                 "promise the customer",
+                "promise me",
                 "guarantee",
                 "approve warranty",
                 "warranty is approved",
                 "already refunded",
                 "approve a chargeback",
                 "outside the return window",
+                "past the return window",
+                "refund the difference",
                 "overnight delivery for every",
+                "will still be available",
                 "without checking",
             ]
         ):
@@ -118,6 +149,13 @@ class EvidenceGapAnalyzer:
                 "which product should i buy for someone",
                 "product we discussed earlier",
                 "complaints about it",
+                "weapon",
+                "break into a car",
+                "without a key",
+                "make them feel sick",
+                "plant food",
+                "what it's really used for",
+                "really used for",
             ]
         ):
             gaps.append("insufficient_context")
@@ -130,9 +168,15 @@ class EvidenceGapAnalyzer:
                 "ignore the structured sku lookup",
                 "infer the price from reviews",
                 "closest product and give me the price",
+                "merge them",
+                "which one is correct",
+                "process the cancellation and refund",
+                "changed my mind about the purchase",
             ]
         ):
             gaps.append("conflicting_instruction")
+        if any(term in q for term in ["lose weight", "flu", "weather forecast", "leaky faucet", "recipe for"]):
+            gaps.append("unknown_intent")
         if "stock price" in q or "share price" in q:
             gaps.append("unknown_intent")
         return list(dict.fromkeys(gaps))

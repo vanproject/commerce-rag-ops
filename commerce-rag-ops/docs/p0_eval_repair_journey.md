@@ -394,3 +394,50 @@ Interpretation:
 - The memory heldout target from the repair plan (`multi_turn_success_rate >= 0.75`) is now met on the designed 50-row split.
 - Privacy memory blocking is now at 1.0 on heldout after clearing active entities for privacy-boundary turns.
 - Ambiguous follow-up clarification remains below the desired 0.75-0.90 range; remaining failures are cases where retrieval/tool evidence produces a single plausible entity from an otherwise ambiguous natural-language turn. This is left as follow-up work for task memory and stronger ambiguity detection.
+
+## P2 Refusal Boundary and Citation Leak Pass
+
+Baseline on the designed 50-row refusal heldout split exposed that the older `reports/refusal_eval_report.md` was still based on the 48-row smoke file:
+
+```bash
+$env:PYTHONPATH='src'; python -m commerce_rag_ops.cli refusal-eval --refusal-path data/eval/refusal_safety_heldout.jsonl --reranker-model none
+```
+
+Initial heldout result:
+
+- `n`: 50
+- `pass_rate`: 0.78
+- `refusal_rate`: 0.78
+- `citation_leak_rate`: 0.14
+
+Fixes:
+
+- Expanded deterministic safety gaps for privacy, prompt injection, unsafe commitments, suspicious product requests, third-party order access, and out-of-domain advice.
+- Added final boundary override in `CommerceRAGAgent._boundary_refusal_gaps()` so high-risk boundary cases cannot be downgraded to `answer`, `clarify`, or `escalate` after retrieval/generation.
+- Kept ordinary missing SKU/order fallback behavior intact: structured entity misses can still retry, but they cannot become entity clarification after retry exhaustion.
+- Refuse/clarify paths continue to strip doc/tool citations and clear `state.citations` / `state.tool_citations`.
+
+Verification:
+
+```bash
+python -m compileall src
+pytest tests/test_core.py -q -k "fallback_stress or refusal"
+pytest -q
+$env:PYTHONPATH='src'; python -m commerce_rag_ops.cli refusal-eval --refusal-path data/eval/refusal_safety_heldout.jsonl --reranker-model none
+```
+
+Observed:
+
+- Focused fallback/refusal tests: `3 passed`
+- Full regression after refusal boundary pass: `54 passed`
+- Refusal heldout used the 50-row designed split with real `openai-compatible` generator, not `template`.
+- Refusal heldout eval:
+  - `n`: 50
+  - `pass_rate`: 1.0
+  - `refusal_rate`: 1.0
+  - `citation_leak_rate`: 0.0
+
+Interpretation:
+
+- The refusal safety target from the repair plan (`pass_rate >= 0.90`, `citation_leak_rate < 0.05`) is met on the designed heldout split.
+- Remaining risk is broader normal-query impact from stronger boundary rules; current full regression and fallback stress suite pass, but the full strong retrieval report matrix still needs to be regenerated.

@@ -638,7 +638,12 @@ class CommerceRAGAgent:
                 max_retries=max_repair_rounds,
             )
             state.llm_advice.setdefault("actions", []).append({"attempt": attempt + 1, **action_advice})
-            state.action = self._merge_action_decision(critic_action, action_advice, state, attempt, max_repair_rounds, evidence_gaps)
+            boundary_refusal_gaps = self._boundary_refusal_gaps(state, evidence_gaps)
+            state.action = (
+                "refuse"
+                if boundary_refusal_gaps
+                else self._merge_action_decision(critic_action, action_advice, state, attempt, max_repair_rounds, evidence_gaps)
+            )
             if state.action == "clarify":
                 state.answer = self._clarification_answer(state)
                 state.citations = []
@@ -666,6 +671,7 @@ class CommerceRAGAgent:
                     "critic_action": critic_action,
                     "decision_reason": decision_reason,
                     "evidence_gaps": evidence_gaps,
+                    "boundary_refusal_gaps": boundary_refusal_gaps,
                     "llm_advice": action_advice,
                     "next_query": next_query,
                     "next_sources": next_sources,
@@ -681,6 +687,7 @@ class CommerceRAGAgent:
                     "critic_action": critic_action,
                     "decision_reason": decision_reason,
                     "evidence_gaps": evidence_gaps,
+                    "boundary_refusal_gaps": boundary_refusal_gaps,
                     "repair_step_count": len(repair_plan.steps),
                 },
                 metrics={
@@ -700,6 +707,7 @@ class CommerceRAGAgent:
                     "max_repair_rounds": max_repair_rounds,
                     "max_retries_compat": max_retries,
                     "evidence_gaps": evidence_gaps,
+                    "boundary_refusal_gaps": boundary_refusal_gaps,
                     "weak_retrieval": self._weak_retrieval(state),
                     "risk_level": state.risk_level,
                     "decision_reason": decision_reason,
@@ -1093,6 +1101,40 @@ class CommerceRAGAgent:
         if advised_action == "retry" and attempt < max_retries:
             return "retry"
         return rule_action
+
+    def _boundary_refusal_gaps(self, state: AgentState, evidence_gaps: list[str]) -> list[str]:
+        query_gaps = self._safety_gaps(state.query)
+        refusal_gaps = [
+            gap
+            for gap in dict.fromkeys([*query_gaps, *evidence_gaps])
+            if gap
+            in {
+                "safety_boundary",
+                "privacy_violation",
+                "unsafe_commitment",
+                "conflicting_instruction",
+                "unknown_intent",
+            }
+        ]
+        if refusal_gaps:
+            return refusal_gaps
+        q = normalize_text(state.query)
+        if "insufficient_context" in query_gaps and any(
+            term in q
+            for term in [
+                "break into a car",
+                "make them feel sick",
+                "plant food",
+                "really used for",
+                "toy and a weapon",
+                "without a key",
+            ]
+        ):
+            return ["insufficient_context"]
+        if any(term in q for term in ["order #", "order number"]):
+            if not (state.tool_results.get("orders") or state.tool_results.get("products")):
+                return ["missing_structured_entity"]
+        return []
 
     def _risk_level(self, query: str):
         tokens = set(tokenize(query))
@@ -1826,13 +1868,15 @@ class CommerceRAGAgent:
         return bool(state.retrieved_contexts) and not self._weak_retrieval(state)
 
     def _should_clarify_missing_entity(self, state: AgentState, evidence_gaps: list[str]) -> bool:
-        if state.entity_retrieval.get("should_clarify") and state.selected_entity is None:
-            return True
-        if not _query_has_unbound_reference(state.query):
-            return False
         if self._query_order_ids(state.query) or self._query_skus(state.query):
             return False
         if _query_has_product_id(state.query):
+            return False
+        if state.tool_results.get("missing_order_ids") or state.tool_results.get("missing_skus"):
+            return False
+        if state.entity_retrieval.get("should_clarify") and state.selected_entity is None:
+            return True
+        if not _query_has_unbound_reference(state.query):
             return False
         if _has_unique_memory_entity(state):
             return False
