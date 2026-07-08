@@ -1,0 +1,102 @@
+{
+  "query": "Check order ORD-1001 status and refund context.",
+  "intent": "sku_order",
+  "risk_level": "high",
+  "retrieval_plan": [
+    "product",
+    "kb"
+  ],
+  "action": "answer",
+  "answer": "Order ORD-1001 is delivered with delivery status delivered with damage report. It contains SKU BEAUTY-SERUM-01 and total $24.99. Supporting context: [doc:kb:KB001_return_refund_policy#96522358b4eef486], [doc:kb:KB001_return_refund_policy#ee79e051ef7a427c], [doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e], [doc:kb:KB003_payment_refund_policy#58aeba54f84fefb9].",
+  "citations": [
+    "[doc:kb:KB001_return_refund_policy#96522358b4eef486]",
+    "[doc:kb:KB001_return_refund_policy#ee79e051ef7a427c]",
+    "[doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e]",
+    "[doc:kb:KB003_payment_refund_policy#58aeba54f84fefb9]"
+  ],
+  "grader_scores": {
+    "top_rerank_score": 0.3699,
+    "citation_rate": 1.0,
+    "groundedness_proxy": 1.0,
+    "relevance_proxy": 1.0
+  },
+  "tool_results": {
+    "backend": "sqlite",
+    "products": [
+      {
+        "product_id": "P-BEAUTY-001",
+        "sku": "BEAUTY-SERUM-01",
+        "title": "HydraGlow Vitamin C Serum",
+        "price": 24.99,
+        "stock": 42,
+        "average_rating": 4.5
+      }
+    ],
+    "orders": [
+      {
+        "order_id": "ORD-1001",
+        "customer_id": "C-001",
+        "sku": "BEAUTY-SERUM-01",
+        "status": "delivered",
+        "delivery_status": "delivered with damage report",
+        "order_date": "2026-03-12",
+        "total": 24.99
+      }
+    ]
+  },
+  "attempts": 1,
+  "trace": [
+    {
+      "event": "route",
+      "intent": "sku_order",
+      "risk_level": "high"
+    },
+    {
+      "event": "retrieve",
+      "attempt": 1,
+      "effective_query": "Check order ORD-1001 status and refund context.",
+      "sources": [
+        "product",
+        "kb"
+      ],
+      "top_contexts": [
+        {
+          "source": "kb",
+          "doc_id": "KB001_return_refund_policy",
+          "chunk_id": "96522358b4eef486",
+          "score": 0.0328,
+          "rerank_score": 0.3699
+        },
+        {
+          "source": "kb",
+          "doc_id": "KB001_return_refund_policy",
+          "chunk_id": "ee79e051ef7a427c",
+          "score": 0.032,
+          "rerank_score": 0.2983
+        },
+        {
+          "source": "kb",
+          "doc_id": "KB004_shipping_delivery_policy",
+          "chunk_id": "71d755fa30c11a8e",
+          "score": 0.032,
+          "rerank_score": 0.2927
+        }
+      ]
+    },
+    {
+      "event": "grade",
+      "scores": {
+        "top_rerank_score": 0.3699,
+        "citation_rate": 1.0,
+        "groundedness_proxy": 1.0,
+        "relevance_proxy": 1.0
+      },
+      "action": "answer"
+    },
+    {
+      "event": "finish",
+      "latency_ms": 3,
+      "attempts": 1
+    }
+  ]
+}

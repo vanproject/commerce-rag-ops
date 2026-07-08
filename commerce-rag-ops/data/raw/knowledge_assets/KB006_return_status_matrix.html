@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Return Status Matrix</title>
+    <style>.hidden { display: none; }</style>
+  </head>
+  <body>
+    <h1>Return Status Matrix</h1>
+    <p>Support agents must classify return requests by item condition, delivery date, and evidence status before offering a refund or replacement.</p>
+    <table>
+      <tr><th>Condition</th><th>Evidence</th><th>Action</th></tr>
+      <tr><td>Leaking or broken item</td><td>Photo required</td><td>Offer replacement or refund after validation</td></tr>
+      <tr><td>Incorrect item</td><td>Order and SKU mismatch required</td><td>Replace with correct item</td></tr>
+      <tr><td>Late delivery only</td><td>Carrier scan required</td><td>Do not promise refund unless guaranteed window is missed</td></tr>
+    </table>
+    <script>window.analytics = "ignore me";</script>
+  </body>
+</html>

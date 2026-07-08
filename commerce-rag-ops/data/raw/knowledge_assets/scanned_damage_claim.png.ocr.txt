@@ -1,0 +1,7 @@
+Damage Claim Form
+
+Order ID: ORD-1001
+SKU: BEAUTY-SERUM-01
+Issue Type: leaking bottle and broken pump
+Customer note: Package arrived wet and half of the serum was missing.
+Required action: validate photo evidence, check delivery date, and apply damaged item return workflow.

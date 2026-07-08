@@ -1,0 +1,102 @@
+{
+  "query": "Use the scanned damage claim for ORD-1001 and explain the required refund evidence.",
+  "intent": "support",
+  "risk_level": "high",
+  "retrieval_plan": [
+    "kb",
+    "ticket"
+  ],
+  "action": "answer",
+  "answer": "The return/refund path depends on the return window, item condition, and proof of purchase. Based on the retrieved policy/ticket evidence, I would respond with a grounded support answer and cite [doc:kb:scanned_damage_claim#b574afb70eabbf5a], [doc:ticket:T-004#d85e1613389da6aa], [doc:kb:KB006_return_status_matrix#6a612c8c54980c92], [doc:kb:KB001_return_refund_policy#ee79e051ef7a427c]. Evidence summary: damage claim form order id: ord-1001 sku: beauty-serum-01 issue type: leaking bottle and broken pump customer note: package arrived wet and half of the serum was missing. required action: validate photo evidence, check delivery date, and apply damaged item return workflow. customer query: the cloud backup subscription renewed and i want to cancel it with a r",
+  "citations": [
+    "[doc:kb:scanned_damage_claim#b574afb70eabbf5a]",
+    "[doc:ticket:T-004#d85e1613389da6aa]",
+    "[doc:kb:KB006_return_status_matrix#6a612c8c54980c92]",
+    "[doc:kb:KB001_return_refund_policy#ee79e051ef7a427c]"
+  ],
+  "grader_scores": {
+    "top_rerank_score": 0.6189,
+    "citation_rate": 1.0,
+    "groundedness_proxy": 1.0,
+    "relevance_proxy": 1.0
+  },
+  "tool_results": {
+    "backend": "sqlite",
+    "products": [
+      {
+        "product_id": "P-BEAUTY-001",
+        "sku": "BEAUTY-SERUM-01",
+        "title": "HydraGlow Vitamin C Serum",
+        "price": 24.99,
+        "stock": 42,
+        "average_rating": 4.5
+      }
+    ],
+    "orders": [
+      {
+        "order_id": "ORD-1001",
+        "customer_id": "C-001",
+        "sku": "BEAUTY-SERUM-01",
+        "status": "delivered",
+        "delivery_status": "delivered with damage report",
+        "order_date": "2026-03-12",
+        "total": 24.99
+      }
+    ]
+  },
+  "attempts": 1,
+  "trace": [
+    {
+      "event": "route",
+      "intent": "support",
+      "risk_level": "high"
+    },
+    {
+      "event": "retrieve",
+      "attempt": 1,
+      "effective_query": "Use the scanned damage claim for ORD-1001 and explain the required refund evidence.",
+      "sources": [
+        "kb",
+        "ticket"
+      ],
+      "top_contexts": [
+        {
+          "source": "kb",
+          "doc_id": "scanned_damage_claim",
+          "chunk_id": "b574afb70eabbf5a",
+          "score": 0.0328,
+          "rerank_score": 0.6189
+        },
+        {
+          "source": "ticket",
+          "doc_id": "T-004",
+          "chunk_id": "d85e1613389da6aa",
+          "score": 0.0317,
+          "rerank_score": 0.3974
+        },
+        {
+          "source": "kb",
+          "doc_id": "KB006_return_status_matrix",
+          "chunk_id": "6a612c8c54980c92",
+          "score": 0.0308,
+          "rerank_score": 0.3906
+        }
+      ]
+    },
+    {
+      "event": "grade",
+      "scores": {
+        "top_rerank_score": 0.6189,
+        "citation_rate": 1.0,
+        "groundedness_proxy": 1.0,
+        "relevance_proxy": 1.0
+      },
+      "action": "answer"
+    },
+    {
+      "event": "finish",
+      "latency_ms": 2,
+      "attempts": 1
+    }
+  ]
+}

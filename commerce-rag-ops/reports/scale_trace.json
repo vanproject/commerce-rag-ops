@@ -1,0 +1,83 @@
+{
+  "query": "Find review evidence for crest whitestrips dental whitening system with rating signals.",
+  "intent": "customer_ops",
+  "risk_level": "low",
+  "retrieval_plan": [
+    "review",
+    "ticket"
+  ],
+  "action": "answer",
+  "answer": "Customer ops summary should focus on repeated review/ticket themes from [doc:review:RV-AMZREV-All_Beauty-00511#6deb2b622a912cc6], [doc:review:RV-AMZREV-All_Beauty-03366#8cd8cd03826b34b9], [doc:review:RV-AMZREV-All_Beauty-04225#4d17948b232c69e3], [doc:review:AS-All_Beauty-B000067E30-price_value#26927288d77640fb].",
+  "citations": [
+    "[doc:review:RV-AMZREV-All_Beauty-00511#6deb2b622a912cc6]",
+    "[doc:review:RV-AMZREV-All_Beauty-03366#8cd8cd03826b34b9]",
+    "[doc:review:RV-AMZREV-All_Beauty-04225#4d17948b232c69e3]",
+    "[doc:review:AS-All_Beauty-B000067E30-price_value#26927288d77640fb]"
+  ],
+  "grader_scores": {
+    "top_rerank_score": 0.7004,
+    "citation_rate": 1.0,
+    "groundedness_proxy": 1.0,
+    "relevance_proxy": 1.0
+  },
+  "tool_results": {
+    "backend": "sqlite",
+    "products": [],
+    "orders": []
+  },
+  "attempts": 1,
+  "trace": [
+    {
+      "event": "route",
+      "intent": "customer_ops",
+      "risk_level": "low"
+    },
+    {
+      "event": "retrieve",
+      "attempt": 1,
+      "effective_query": "Find review evidence for crest whitestrips dental whitening system with rating signals.",
+      "sources": [
+        "review",
+        "ticket"
+      ],
+      "top_contexts": [
+        {
+          "source": "review",
+          "doc_id": "RV-AMZREV-All_Beauty-00511",
+          "chunk_id": "6deb2b622a912cc6",
+          "score": 0.0328,
+          "rerank_score": 0.7004
+        },
+        {
+          "source": "review",
+          "doc_id": "RV-AMZREV-All_Beauty-03366",
+          "chunk_id": "8cd8cd03826b34b9",
+          "score": 0.0315,
+          "rerank_score": 0.684
+        },
+        {
+          "source": "review",
+          "doc_id": "RV-AMZREV-All_Beauty-04225",
+          "chunk_id": "4d17948b232c69e3",
+          "score": 0.0297,
+          "rerank_score": 0.6631
+        }
+      ]
+    },
+    {
+      "event": "grade",
+      "scores": {
+        "top_rerank_score": 0.7004,
+        "citation_rate": 1.0,
+        "groundedness_proxy": 1.0,
+        "relevance_proxy": 1.0
+      },
+      "action": "answer"
+    },
+    {
+      "event": "finish",
+      "latency_ms": 374,
+      "attempts": 1
+    }
+  ]
+}

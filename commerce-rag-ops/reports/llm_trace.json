@@ -1,0 +1,90 @@
+{
+  "query": "My serum arrived leaking. Can I get a refund?",
+  "intent": "support",
+  "risk_level": "high",
+  "retrieval_plan": [
+    "kb",
+    "ticket"
+  ],
+  "action": "answer",
+  "answer": "I'm sorry to hear that your serum arrived leaking. That’s definitely frustrating. According to our records, your product matches the **HydraGlow Vitamin C Serum**, and we can help you with this.\n\nBased on our **return and refund policy**, if an item arrives damaged (e.g., leaking or broken), you may be eligible for a replacement or refund, as long as the damage is reported within 30 days of delivery[doc:kb:KB001_return_refund_policy#ee79e051ef7a427c]. However, we can only confirm eligibility after verifying the order and the condition of the item.\n\nTo move forward, I’ll need:\n\n1. **Your order confirmation number** (so we can look up the purchase).\n2. **Clear photos** showing the leaking serum and the packaging.\n\nOnce I have those, I can validate the issue and arrange a **refund or replacement** for you[doc:ticket:T-001#d9c7c01c76812a84].\n\nPlease share those details when you can, and I’ll take it from there!",
+  "citations": [
+    "[doc:ticket:T-001#d9c7c01c76812a84]",
+    "[doc:kb:KB001_return_refund_policy#ee79e051ef7a427c]",
+    "[doc:kb:KB003_payment_refund_policy#58aeba54f84fefb9]"
+  ],
+  "grader_scores": {
+    "top_rerank_score": 0.7198,
+    "citation_rate": 1.0,
+    "groundedness_proxy": 1.0,
+    "relevance_proxy": 1.0
+  },
+  "tool_results": {
+    "products": [
+      {
+        "product_id": "P-BEAUTY-001",
+        "sku": "BEAUTY-SERUM-01",
+        "title": "HydraGlow Vitamin C Serum",
+        "price": 24.99,
+        "stock": 42,
+        "average_rating": 4.5
+      }
+    ],
+    "orders": []
+  },
+  "attempts": 1,
+  "trace": [
+    {
+      "event": "route",
+      "intent": "support",
+      "risk_level": "high"
+    },
+    {
+      "event": "retrieve",
+      "attempt": 1,
+      "effective_query": "My serum arrived leaking. Can I get a refund?",
+      "sources": [
+        "kb",
+        "ticket"
+      ],
+      "top_contexts": [
+        {
+          "source": "ticket",
+          "doc_id": "T-001",
+          "chunk_id": "d9c7c01c76812a84",
+          "score": 0.0328,
+          "rerank_score": 0.7198
+        },
+        {
+          "source": "kb",
+          "doc_id": "KB001_return_refund_policy",
+          "chunk_id": "ee79e051ef7a427c",
+          "score": 0.032,
+          "rerank_score": 0.4329
+        },
+        {
+          "source": "kb",
+          "doc_id": "KB003_payment_refund_policy",
+          "chunk_id": "58aeba54f84fefb9",
+          "score": 0.0294,
+          "rerank_score": 0.1893
+        }
+      ]
+    },
+    {
+      "event": "grade",
+      "scores": {
+        "top_rerank_score": 0.7198,
+        "citation_rate": 1.0,
+        "groundedness_proxy": 1.0,
+        "relevance_proxy": 1.0
+      },
+      "action": "answer"
+    },
+    {
+      "event": "finish",
+      "latency_ms": 13441,
+      "attempts": 1
+    }
+  ]
+}

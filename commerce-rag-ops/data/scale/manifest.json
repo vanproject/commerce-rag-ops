@@ -1,0 +1,36 @@
+{
+  "source": "Amazon Reviews 2023 full gzip subset",
+  "categories": [
+    {
+      "category": "All_Beauty",
+      "reviews": 5000,
+      "products": 1000,
+      "avg_rating": 4.1826
+    },
+    {
+      "category": "Software",
+      "reviews": 5000,
+      "products": 1000,
+      "avg_rating": 3.843
+    },
+    {
+      "category": "Baby_Products",
+      "reviews": 5000,
+      "products": 1000,
+      "avg_rating": 4.3582
+    }
+  ],
+  "reviews_per_category_target": 5000,
+  "products_per_category_limit": 1000,
+  "products": 3000,
+  "reviews": 15000,
+  "rag_documents": 19969,
+  "golden_eval_queries": 366,
+  "document_types": {
+    "product_profile": 3000,
+    "review_evidence": 15000,
+    "review_aspect_summary": 1405,
+    "complaint_cluster": 24,
+    "faq_case": 540
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "source": "Amazon Reviews 2023 / UCSD McAuley Lab",
+  "categories": [
+    "All_Beauty",
+    "Software",
+    "Baby_Products"
+  ],
+  "files": [
+    {
+      "category": "All_Beauty",
+      "kind": "reviews",
+      "url": "https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/review_categories/All_Beauty.jsonl.gz",
+      "path": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data\\raw\\amazon_reviews_2023\\All_Beauty\\reviews.jsonl.gz",
+      "bytes": 94441517,
+      "rows": 701528
+    },
+    {
+      "category": "All_Beauty",
+      "kind": "metadata",
+      "url": "https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/meta_categories/meta_All_Beauty.jsonl.gz",
+      "path": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data\\raw\\amazon_reviews_2023\\All_Beauty\\metadata.jsonl.gz",
+      "bytes": 39871253,
+      "rows": 112590
+    },
+    {
+      "category": "Software",
+      "kind": "reviews",
+      "url": "https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/review_categories/Software.jsonl.gz",
+      "path": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data\\raw\\amazon_reviews_2023\\Software\\reviews.jsonl.gz",
+      "bytes": 496076370,
+      "rows": 4880181
+    },
+    {
+      "category": "Software",
+      "kind": "metadata",
+      "url": "https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/meta_categories/meta_Software.jsonl.gz",
+      "path": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data\\raw\\amazon_reviews_2023\\Software\\metadata.jsonl.gz",
+      "bytes": 64165835,
+      "rows": 89251
+    },
+    {
+      "category": "Baby_Products",
+      "kind": "reviews",
+      "url": "https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/review_categories/Baby_Products.jsonl.gz",
+      "path": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data\\raw\\amazon_reviews_2023\\Baby_Products\\reviews.jsonl.gz",
+      "bytes": 837501465,
+      "rows": 6028884
+    },
+    {
+      "category": "Baby_Products",
+      "kind": "metadata",
+      "url": "https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/meta_categories/meta_Baby_Products.jsonl.gz",
+      "path": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data\\raw\\amazon_reviews_2023\\Baby_Products\\metadata.jsonl.gz",
+      "bytes": 174842029,
+      "rows": 217724
+    }
+  ]
+}

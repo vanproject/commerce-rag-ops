@@ -1,0 +1,2283 @@
+{
+  "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+  "query": "Check order ORD-1003 status and delivery context.",
+  "original_query": null,
+  "memory_context": {
+    "conversation_id": null,
+    "user_id": null,
+    "active_entities": {},
+    "resolved_entities": [],
+    "recent_turn_count": 0,
+    "ambiguous_entity_types": []
+  },
+  "resolved_entities": [],
+  "intent": "sku_order",
+  "risk_level": "medium",
+  "retrieval_plan": [
+    "product",
+    "kb"
+  ],
+  "action": "answer",
+  "answer": "Order ORD-1003 is delivered with delivery status late delivery reported. It contains SKU BABY-MONITOR-01 and total $89.99. Items: BABY-MONITOR-01 x1 ($89.99). Tool evidence: [tool:sql.order_by_id:ORD-1003], [tool:sql.order_items_by_order_id:ORD-1003]. Supporting context: [doc:product:P-BABY-001#b5c4f3e2496ef945], [doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e].",
+  "citations": [
+    "[doc:product:P-BABY-001#b5c4f3e2496ef945]",
+    "[doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e]"
+  ],
+  "tool_citations": [
+    "[tool:sql.order_by_id:ORD-1003]",
+    "[tool:sql.order_items_by_order_id:ORD-1003]"
+  ],
+  "grader_scores": {
+    "top_rerank_score": 0.9985,
+    "citation_rate": 1.0,
+    "groundedness_proxy": 1.0,
+    "relevance_proxy": 1.0,
+    "tool_citation_schema_ok": 1.0,
+    "answer_tool_citation_precision": 1.0,
+    "answer_tool_citation_recall": 1.0,
+    "evidence_gap_count": 0.0
+  },
+  "tool_results": {
+    "backend": "sqlite",
+    "products": [],
+    "orders": [
+      {
+        "found": true,
+        "order_id": "ORD-1003",
+        "customer_id": "[REDACTED]",
+        "product_id": "P-BABY-001",
+        "sku": "BABY-MONITOR-01",
+        "status": "delivered",
+        "delivery_status": "late delivery reported",
+        "order_date": "2026-05-09",
+        "total": 89.99
+      }
+    ],
+    "order_items": [
+      {
+        "order_id": "ORD-1003",
+        "product_id": "P-BABY-001",
+        "sku": "BABY-MONITOR-01",
+        "quantity": 1,
+        "unit_price": 89.99,
+        "line_total": 89.99
+      }
+    ],
+    "inventory": [],
+    "return_eligibility": [],
+    "review_summaries": [],
+    "similar_cases": [],
+    "tool_calls": [
+      {
+        "tool_name": "sql.order_by_id",
+        "input": {
+          "order_id": "ORD-1003"
+        },
+        "output": {
+          "found": true,
+          "order_id": "ORD-1003",
+          "customer_id": "[REDACTED]",
+          "product_id": "P-BABY-001",
+          "sku": "BABY-MONITOR-01",
+          "status": "delivered",
+          "delivery_status": "late delivery reported",
+          "order_date": "2026-05-09",
+          "total": 89.99
+        },
+        "found": true,
+        "latency_ms": 1,
+        "error": null,
+        "policy_decision": "allowed",
+        "evidence_id": "[tool:sql.order_by_id:ORD-1003]"
+      },
+      {
+        "tool_name": "sql.order_items_by_order_id",
+        "input": {
+          "order_id": "ORD-1003"
+        },
+        "output": {
+          "found": true,
+          "order_id": "ORD-1003",
+          "items": [
+            {
+              "order_id": "ORD-1003",
+              "product_id": "P-BABY-001",
+              "sku": "BABY-MONITOR-01",
+              "quantity": 1,
+              "unit_price": 89.99,
+              "line_total": 89.99
+            }
+          ]
+        },
+        "found": true,
+        "latency_ms": 2,
+        "error": null,
+        "policy_decision": "allowed",
+        "evidence_id": "[tool:sql.order_items_by_order_id:ORD-1003]"
+      }
+    ],
+    "mentioned_order_ids": [
+      "ord-1003"
+    ],
+    "missing_order_ids": [],
+    "mentioned_skus": [],
+    "missing_skus": []
+  },
+  "attempts": 1,
+  "trace": [
+    {
+      "event": "run_start",
+      "timestamp": "2026-07-06T14:09:21.584325+00:00",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "query": "Check order ORD-1003 status and delivery context.",
+      "max_retries": 1
+    },
+    {
+      "event": "memory_load",
+      "timestamp": "2026-07-06T14:09:21.584325+00:00",
+      "conversation_id": null,
+      "recent_turn_count": 0,
+      "active_entities": {},
+      "used_entities": [],
+      "blocked_reasons": []
+    },
+    {
+      "event": "intent_route",
+      "timestamp": "2026-07-06T14:09:21.584325+00:00",
+      "intent": "sku_order",
+      "risk_level": "medium",
+      "confidence": 0.7978,
+      "scores": {
+        "customer_ops": 0.0,
+        "recommendation": 0.0,
+        "sku_order": 7.1,
+        "support": 1.8,
+        "unknown": 0.0
+      },
+      "signals": [
+        {
+          "intent": "sku_order",
+          "weight": 4.5,
+          "source": "structured_entity",
+          "reason": "explicit order id or sku"
+        },
+        {
+          "intent": "sku_order",
+          "weight": 2.6,
+          "source": "order_status",
+          "reason": "order status/tracking"
+        },
+        {
+          "intent": "support",
+          "weight": 1.8,
+          "source": "support_keyword",
+          "reason": "delivery"
+        }
+      ],
+      "matched_rule": "structured_entity:explicit order id or sku",
+      "matched_terms": [
+        "explicit order id or sku",
+        "order status/tracking"
+      ],
+      "priority_order": [
+        "sku_order",
+        "customer_ops",
+        "recommendation",
+        "support",
+        "unknown"
+      ]
+    },
+    {
+      "event": "plan_sources",
+      "timestamp": "2026-07-06T14:09:21.584325+00:00",
+      "intent": "sku_order",
+      "sources": [
+        "product",
+        "kb"
+      ],
+      "reason": "sku/order intent requires structured product facts plus policy context"
+    },
+    {
+      "event": "attempt_start",
+      "timestamp": "2026-07-06T14:09:21.584325+00:00",
+      "attempt": 1,
+      "effective_query": "Check order ORD-1003 status and delivery context.",
+      "sources": [
+        "product",
+        "kb"
+      ],
+      "previous_evidence_gaps": []
+    },
+    {
+      "event": "tool_use",
+      "timestamp": "2026-07-06T14:09:21.589257+00:00",
+      "attempt": 1,
+      "latency_ms": 4,
+      "tool_plan": [
+        {
+          "tool_name": "sql.order_by_id",
+          "input": {
+            "order_id": "ORD-1003"
+          },
+          "reason": "explicit_order_id",
+          "required": true
+        },
+        {
+          "tool_name": "sql.order_items_by_order_id",
+          "input": {
+            "order_id": "ORD-1003"
+          },
+          "reason": "explicit_order_item_context",
+          "required": false
+        }
+      ],
+      "summary": {
+        "backend": "sqlite",
+        "product_count": 0,
+        "order_count": 1,
+        "order_item_count": 1,
+        "mentioned_skus": [],
+        "missing_skus": [],
+        "mentioned_order_ids": [
+          "ord-1003"
+        ],
+        "missing_order_ids": [],
+        "tool_call_count": 2,
+        "return_eligibility_count": 0,
+        "review_summary_count": 0,
+        "similar_case_count": 0
+      },
+      "tool_calls": [
+        {
+          "tool_name": "sql.order_by_id",
+          "input": {
+            "order_id": "ORD-1003"
+          },
+          "output": {
+            "found": true,
+            "order_id": "ORD-1003",
+            "customer_id": "[REDACTED]",
+            "product_id": "P-BABY-001",
+            "sku": "BABY-MONITOR-01",
+            "status": "delivered",
+            "delivery_status": "late delivery reported",
+            "order_date": "2026-05-09",
+            "total": 89.99
+          },
+          "found": true,
+          "latency_ms": 1,
+          "error": null,
+          "policy_decision": "allowed",
+          "evidence_id": "[tool:sql.order_by_id:ORD-1003]"
+        },
+        {
+          "tool_name": "sql.order_items_by_order_id",
+          "input": {
+            "order_id": "ORD-1003"
+          },
+          "output": {
+            "found": true,
+            "order_id": "ORD-1003",
+            "items": [
+              {
+                "order_id": "ORD-1003",
+                "product_id": "P-BABY-001",
+                "sku": "BABY-MONITOR-01",
+                "quantity": 1,
+                "unit_price": 89.99,
+                "line_total": 89.99
+              }
+            ]
+          },
+          "found": true,
+          "latency_ms": 2,
+          "error": null,
+          "policy_decision": "allowed",
+          "evidence_id": "[tool:sql.order_items_by_order_id:ORD-1003]"
+        }
+      ]
+    },
+    {
+      "event": "retrieve",
+      "timestamp": "2026-07-06T14:09:21.748740+00:00",
+      "attempt": 1,
+      "effective_query": "Check order ORD-1003 status and delivery context.",
+      "retrieval_query": "Check order ORD-1003 status and delivery context. structured facts: orders ORD-1003; products P-BABY-001; sku BABY-MONITOR-01",
+      "tool_constraints": {
+        "product_ids": [
+          "P-BABY-001"
+        ],
+        "skus": [
+          "BABY-MONITOR-01"
+        ],
+        "order_ids": [
+          "ORD-1003"
+        ]
+      },
+      "sources": [
+        "product",
+        "kb"
+      ],
+      "latency_ms": 150,
+      "returned_contexts": 2,
+      "post_category_filter_contexts": 2,
+      "diagnostic_stages": [
+        {
+          "name": "query_analysis",
+          "duration_ms": 0,
+          "query_product_ids": [
+            "P-BABY-001"
+          ],
+          "query_rating": null,
+          "query_aspect": "",
+          "support_review_ids": []
+        },
+        {
+          "name": "dense.search",
+          "duration_ms": 99,
+          "candidates": 9230
+        },
+        {
+          "name": "bm25.search",
+          "duration_ms": 34,
+          "candidates": 9230
+        },
+        {
+          "name": "rrf.fusion",
+          "duration_ms": 5,
+          "dense_ranked": 30,
+          "bm25_ranked": 30,
+          "fused_candidates": 30
+        },
+        {
+          "name": "forced_candidates",
+          "duration_ms": 0,
+          "doc_type_added": 10,
+          "entity_added": 0,
+          "support_added": 0
+        },
+        {
+          "name": "heuristic_rerank",
+          "duration_ms": 2,
+          "candidates": 40
+        },
+        {
+          "name": "diversify",
+          "duration_ms": 0,
+          "input_candidates": 40,
+          "selected": 2
+        }
+      ],
+      "candidate_count": 40,
+      "top_contexts": [
+        {
+          "source": "product",
+          "doc_id": "P-BABY-001",
+          "chunk_id": "b5c4f3e2496ef945",
+          "doc_type": "product",
+          "content_hash": "sha256:3f3c93c8cfd8bfc41eea13d2a7d3dd2a0b13905ccf58898352c9b265bca0fe7b",
+          "preview": "nightview baby monitor baby_products a baby monitor for nursery use with night vision, audio, and temperature alerts. night vision two way audio temperature sen",
+          "score": 0.0254,
+          "rerank_score": 0.9985
+        },
+        {
+          "source": "kb",
+          "doc_id": "KB004_shipping_delivery_policy",
+          "chunk_id": "71d755fa30c11a8e",
+          "doc_type": "policy_markdown",
+          "content_hash": "sha256:a39876295aa26c4a98e0ef9a06f69192a1a8ac8140f19402a488856c95805400",
+          "preview": "# shipping and digital delivery policy physical delivery issues require checking carrier status, delivery address, and delivery date. late delivery does not aut",
+          "score": 0.0149,
+          "rerank_score": 0.7039
+        }
+      ]
+    },
+    {
+      "event": "context_filter",
+      "timestamp": "2026-07-06T14:09:21.748740+00:00",
+      "attempt": 1,
+      "filter": "structured_entity",
+      "before": 2,
+      "after": 2,
+      "removed": []
+    },
+    {
+      "event": "generate",
+      "timestamp": "2026-07-06T14:09:21.748740+00:00",
+      "attempt": 1,
+      "latency_ms": 0,
+      "generator": "TemplateAnswerGenerator",
+      "citations": [
+        "[doc:product:P-BABY-001#b5c4f3e2496ef945]",
+        "[doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e]"
+      ],
+      "answer_preview": "Order ORD-1003 is delivered with delivery status late delivery reported. It contains SKU BABY-MONITOR-01 and total $89.99. Items: BABY-MONITOR-01 x1 ($89.99). Tool evidence: [tool:sql.order_by_id:ORD-1003], [tool:sql.order_items_by_order_id",
+      "prompt_artifact_id": "a477f26a-6a04-4e35-bedf-2247316b9ef1"
+    },
+    {
+      "event": "action_decision",
+      "timestamp": "2026-07-06T14:09:21.748740+00:00",
+      "attempt": 1,
+      "action": "answer",
+      "max_retries": 1,
+      "evidence_gaps": [],
+      "weak_retrieval": false,
+      "risk_level": "medium",
+      "decision_reason": "answer because required evidence contract is satisfied",
+      "next_query": null,
+      "next_sources": null
+    },
+    {
+      "event": "grade",
+      "timestamp": "2026-07-06T14:09:21.748740+00:00",
+      "scores": {
+        "top_rerank_score": 0.9985,
+        "citation_rate": 1.0,
+        "groundedness_proxy": 1.0,
+        "relevance_proxy": 1.0,
+        "tool_citation_schema_ok": 1.0,
+        "answer_tool_citation_precision": 1.0,
+        "answer_tool_citation_recall": 1.0,
+        "evidence_gap_count": 0.0
+      },
+      "evidence_gaps": [],
+      "citation_validation": {
+        "citation_schema_ok": 1.0,
+        "answer_citation_precision": 1.0,
+        "answer_citation_recall": 1.0,
+        "citation_grounded_rate": 1.0,
+        "citation_count": 2,
+        "answer_citation_count": 2,
+        "citation_failures": [],
+        "citation_payload": [
+          {
+            "source": "product",
+            "doc_id": "P-BABY-001",
+            "chunk_id": "b5c4f3e2496ef945",
+            "rank": 1,
+            "doc_type": "product"
+          },
+          {
+            "source": "kb",
+            "doc_id": "KB004_shipping_delivery_policy",
+            "chunk_id": "71d755fa30c11a8e",
+            "rank": 2,
+            "doc_type": "policy_markdown"
+          }
+        ]
+      },
+      "tool_citation_validation": {
+        "tool_citation_schema_ok": 1.0,
+        "answer_tool_citation_precision": 1.0,
+        "answer_tool_citation_recall": 1.0,
+        "tool_citation_count": 2,
+        "answer_tool_citation_count": 2,
+        "tool_citation_failures": [],
+        "tool_citation_payload": [
+          {
+            "tool_name": "sql.order_by_id",
+            "entity": "ORD-1003"
+          },
+          {
+            "tool_name": "sql.order_items_by_order_id",
+            "entity": "ORD-1003"
+          }
+        ]
+      },
+      "action": "answer",
+      "attempt_latency_ms": 162
+    },
+    {
+      "event": "finish",
+      "timestamp": "2026-07-06T14:09:21.751346+00:00",
+      "trace_schema_version": "2.0",
+      "latency_ms": 198,
+      "attempts": 1,
+      "final_action": "answer",
+      "final_intent": "sku_order",
+      "citation_count": 2,
+      "span_count": 21,
+      "artifact_count": 5,
+      "retrieval_candidate_count": 40
+    }
+  ],
+  "trace_run": {
+    "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+    "created_at": "2026-07-06T14:09:21.584325+00:00",
+    "query": "Check order ORD-1003 status and delivery context.",
+    "normalized_query": "check order ord-1003 status and delivery context.",
+    "intent": "sku_order",
+    "risk_level": "medium",
+    "retrieval_plan": [
+      "product",
+      "kb"
+    ],
+    "final_action": "answer",
+    "answer": "Order ORD-1003 is delivered with delivery status late delivery reported. It contains SKU BABY-MONITOR-01 and total $89.99. Items: BABY-MONITOR-01 x1 ($89.99). Tool evidence: [tool:sql.order_by_id:ORD-1003], [tool:sql.order_items_by_order_id:ORD-1003]. Supporting context: [doc:product:P-BABY-001#b5c4f3e2496ef945], [doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e].",
+    "citations": [
+      "[doc:product:P-BABY-001#b5c4f3e2496ef945]",
+      "[doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e]"
+    ],
+    "latency_ms": 198,
+    "attempts": 1,
+    "config": {
+      "agent": "CommerceRAGAgent",
+      "retriever": "HybridRetriever",
+      "generator": "TemplateAnswerGenerator",
+      "score_threshold": 0.08,
+      "max_retries": 1,
+      "embedding_model": null,
+      "reranker_model": null
+    },
+    "dataset_manifest": {
+      "data_dir": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data",
+      "products": 6,
+      "tickets": 6,
+      "orders": 4,
+      "chunks_path": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data\\processed\\chunks.jsonl",
+      "chunks_mtime": 1783346715,
+      "sqlite_path": "E:\\code\\agent\\deepsearch\\commerce-rag-ops\\data\\structured\\commerce.db",
+      "sqlite_mtime": 1783248472
+    },
+    "git_sha": "335d1da"
+  },
+  "trace_spans": [
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "parent_span_id": null,
+      "name": "agent.run",
+      "kind": "agent",
+      "start_time": "2026-07-06T14:09:21.584325+00:00",
+      "end_time": "2026-07-06T14:09:21.748740+00:00",
+      "duration_ms": 163,
+      "attempt": null,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "query": "Check order ORD-***1003 status and delivery context."
+      },
+      "outputs": {
+        "intent": "sku_order",
+        "risk_level": "medium",
+        "final_action": "answer",
+        "citation_count": 2
+      },
+      "metrics": {
+        "latency_ms": 198,
+        "attempts": 1
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "7c8066f7-b192-462b-a5cf-7041b47b06b0",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "memory.load",
+      "kind": "memory",
+      "start_time": "2026-07-06T14:09:21.584325+00:00",
+      "end_time": "2026-07-06T14:09:21.584325+00:00",
+      "duration_ms": 0,
+      "attempt": null,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "conversation_id": null,
+        "original_query": null,
+        "resolved_query": "Check order ORD-***1003 status and delivery context."
+      },
+      "outputs": {
+        "conversation_id": null,
+        "recent_turn_count": 0,
+        "active_entities": {},
+        "used_entities": [],
+        "blocked_reasons": []
+      },
+      "metrics": {},
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "421bb5da-845d-484d-940d-318cd66369d8",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "intent.route",
+      "kind": "router",
+      "start_time": "2026-07-06T14:09:21.584325+00:00",
+      "end_time": "2026-07-06T14:09:21.584325+00:00",
+      "duration_ms": 0,
+      "attempt": null,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "query": "Check order ORD-***1003 status and delivery context.",
+        "tokens": [
+          "check",
+          "order",
+          "ord",
+          "1003",
+          "status",
+          "and",
+          "delivery",
+          "context"
+        ]
+      },
+      "outputs": {
+        "intent": "sku_order",
+        "confidence": 0.7978,
+        "scores": {
+          "customer_ops": 0.0,
+          "recommendation": 0.0,
+          "sku_order": 7.1,
+          "support": 1.8,
+          "unknown": 0.0
+        },
+        "signals": [
+          {
+            "intent": "sku_order",
+            "weight": 4.5,
+            "source": "structured_entity",
+            "reason": "explicit order id or sku"
+          },
+          {
+            "intent": "sku_order",
+            "weight": 2.6,
+            "source": "order_status",
+            "reason": "order status/tracking"
+          },
+          {
+            "intent": "support",
+            "weight": 1.8,
+            "source": "support_keyword",
+            "reason": "delivery"
+          }
+        ],
+        "matched_rule": "structured_entity:explicit order id or sku",
+        "matched_terms": [
+          "explicit order id or sku",
+          "order status/tracking"
+        ],
+        "priority_order": [
+          "sku_order",
+          "customer_ops",
+          "recommendation",
+          "support",
+          "unknown"
+        ]
+      },
+      "metrics": {},
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "cc3a1f99-10ae-4e2c-9f84-eb4070e7be1c",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "risk.classify",
+      "kind": "risk",
+      "start_time": "2026-07-06T14:09:21.584325+00:00",
+      "end_time": "2026-07-06T14:09:21.584325+00:00",
+      "duration_ms": 0,
+      "attempt": null,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "query": "Check order ORD-***1003 status and delivery context.",
+        "high_risk_terms": [
+          "broken",
+          "chargeback",
+          "compensation",
+          "defective",
+          "refund",
+          "return",
+          "warranty"
+        ]
+      },
+      "outputs": {
+        "risk_level": "medium"
+      },
+      "metrics": {},
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "81544dc8-d5f7-4ea5-a883-a3fafd5328ac",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "retrieval.plan",
+      "kind": "planner",
+      "start_time": "2026-07-06T14:09:21.584325+00:00",
+      "end_time": "2026-07-06T14:09:21.584325+00:00",
+      "duration_ms": 0,
+      "attempt": null,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "intent": "sku_order"
+      },
+      "outputs": {
+        "intent": "sku_order",
+        "planned_sources": [
+          "product",
+          "kb"
+        ],
+        "reason": "sku/order intent requires structured product facts plus policy context"
+      },
+      "metrics": {},
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "ee0b2c64-6e10-48d6-8459-f836fc584f82",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "tool.plan",
+      "kind": "planner",
+      "start_time": "2026-07-06T14:09:21.584325+00:00",
+      "end_time": "2026-07-06T14:09:21.584325+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "query": "Check order ORD-***1003 status and delivery context.",
+        "intent": "sku_order"
+      },
+      "outputs": {
+        "tools": [
+          "sql.order_by_id",
+          "sql.order_items_by_order_id"
+        ],
+        "reasons": [
+          "explicit_order_id",
+          "explicit_order_item_context"
+        ]
+      },
+      "metrics": {
+        "tool_count": 2
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "bae5b9e1-e73e-4d66-9b76-45703351cc64",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "tools.execute",
+      "kind": "tool",
+      "start_time": "2026-07-06T14:09:21.584325+00:00",
+      "end_time": "2026-07-06T14:09:21.589257+00:00",
+      "duration_ms": 3,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "tool_plan": [
+          {
+            "tool_name": "sql.order_by_id",
+            "input": {
+              "order_id": "ORD-***1003"
+            },
+            "reason": "explicit_order_id",
+            "required": true
+          },
+          {
+            "tool_name": "sql.order_items_by_order_id",
+            "input": {
+              "order_id": "ORD-***1003"
+            },
+            "reason": "explicit_order_item_context",
+            "required": false
+          }
+        ]
+      },
+      "outputs": {
+        "summary": {
+          "backend": "sqlite",
+          "product_count": 0,
+          "order_count": 1,
+          "order_item_count": 1,
+          "mentioned_skus": [],
+          "missing_skus": [],
+          "mentioned_order_ids": [
+            "ORD-***1003"
+          ],
+          "missing_order_ids": [],
+          "tool_call_count": 2,
+          "return_eligibility_count": 0,
+          "review_summary_count": 0,
+          "similar_case_count": 0
+        },
+        "tool_calls": [
+          {
+            "tool_name": "sql.order_by_id",
+            "input": {
+              "order_id": "ORD-***1003"
+            },
+            "output": {
+              "found": true,
+              "order_id": "ORD-***1003",
+              "customer_id": "[REDACTED]",
+              "product_id": "P-BABY-001",
+              "sku": "BABY-MONITOR-01",
+              "status": "delivered",
+              "delivery_status": "late delivery reported",
+              "order_date": "2026-05-09",
+              "total": 89.99
+            },
+            "found": true,
+            "latency_ms": 1,
+            "error": null,
+            "policy_decision": "allowed",
+            "evidence_id": "[tool:sql.order_by_id:ORD-***1003]"
+          },
+          {
+            "tool_name": "sql.order_items_by_order_id",
+            "input": {
+              "order_id": "ORD-***1003"
+            },
+            "output": {
+              "found": true,
+              "order_id": "ORD-***1003",
+              "items": [
+                {
+                  "order_id": "ORD-***1003",
+                  "product_id": "P-BABY-001",
+                  "sku": "BABY-MONITOR-01",
+                  "quantity": 1,
+                  "unit_price": 89.99,
+                  "line_total": 89.99
+                }
+              ]
+            },
+            "found": true,
+            "latency_ms": 2,
+            "error": null,
+            "policy_decision": "allowed",
+            "evidence_id": "[tool:sql.order_items_by_order_id:ORD-***1003]"
+          }
+        ]
+      },
+      "metrics": {
+        "latency_ms": 3
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "retrieval.attempt_1",
+      "kind": "retrieval",
+      "start_time": "2026-07-06T14:09:21.589257+00:00",
+      "end_time": "2026-07-06T14:09:21.739190+00:00",
+      "duration_ms": 150,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "query": "Check order ORD-***1003 status and delivery context. structured facts: orders ORD-***1003; products P-BABY-001; sku BABY-MONITOR-01",
+        "original_attempt_query": "Check order ORD-***1003 status and delivery context.",
+        "sources": [
+          "product",
+          "kb"
+        ],
+        "top_k": 6,
+        "candidate_k": 30,
+        "tool_constraints": {
+          "product_ids": [
+            "P-BABY-001"
+          ],
+          "skus": [
+            "BABY-MONITOR-01"
+          ],
+          "order_ids": [
+            "ORD-***1003"
+          ]
+        }
+      },
+      "outputs": {
+        "returned_contexts": 2,
+        "post_category_filter_contexts": 2,
+        "selected_context_ids": [
+          "doc:product:P-BABY-001#b5c4f3e2496ef945",
+          "doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e"
+        ]
+      },
+      "metrics": {
+        "latency_ms": 150,
+        "candidate_count": 40
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "4a67e1fc-5ba6-4943-ad1a-b350fb8fd476",
+      "parent_span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "name": "query_analysis",
+      "kind": "retrieval",
+      "start_time": "2026-07-06T14:09:21.739190+00:00",
+      "end_time": "2026-07-06T14:09:21.739190+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {},
+      "outputs": {},
+      "metrics": {
+        "name": "query_analysis",
+        "duration_ms": 0,
+        "query_product_ids": [
+          "P-BABY-001"
+        ],
+        "query_rating": null,
+        "query_aspect": "",
+        "support_review_ids": []
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "0559bded-e688-4a89-871b-90dcbceedb37",
+      "parent_span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "name": "dense.search",
+      "kind": "retrieval",
+      "start_time": "2026-07-06T14:09:21.739190+00:00",
+      "end_time": "2026-07-06T14:09:21.739190+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {},
+      "outputs": {},
+      "metrics": {
+        "name": "dense.search",
+        "duration_ms": 99,
+        "candidates": 9230
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "668e2f29-af1b-4561-bd48-948497391eef",
+      "parent_span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "name": "bm25.search",
+      "kind": "retrieval",
+      "start_time": "2026-07-06T14:09:21.739190+00:00",
+      "end_time": "2026-07-06T14:09:21.739190+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {},
+      "outputs": {},
+      "metrics": {
+        "name": "bm25.search",
+        "duration_ms": 34,
+        "candidates": 9230
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "d13ecdcd-8fe8-4ef5-abe0-a127f98860ad",
+      "parent_span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "name": "rrf.fusion",
+      "kind": "fusion",
+      "start_time": "2026-07-06T14:09:21.739190+00:00",
+      "end_time": "2026-07-06T14:09:21.739190+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {},
+      "outputs": {},
+      "metrics": {
+        "name": "rrf.fusion",
+        "duration_ms": 5,
+        "dense_ranked": 30,
+        "bm25_ranked": 30,
+        "fused_candidates": 30
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "1258be7e-639f-4859-8cc1-eaeda42caa3f",
+      "parent_span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "name": "forced_candidates",
+      "kind": "filter",
+      "start_time": "2026-07-06T14:09:21.739190+00:00",
+      "end_time": "2026-07-06T14:09:21.739190+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {},
+      "outputs": {},
+      "metrics": {
+        "name": "forced_candidates",
+        "duration_ms": 0,
+        "doc_type_added": 10,
+        "entity_added": 0,
+        "support_added": 0
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "323a0e21-0d65-4b55-b1c4-9c29e16b7a12",
+      "parent_span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "name": "heuristic_rerank",
+      "kind": "rerank",
+      "start_time": "2026-07-06T14:09:21.739190+00:00",
+      "end_time": "2026-07-06T14:09:21.739190+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {},
+      "outputs": {},
+      "metrics": {
+        "name": "heuristic_rerank",
+        "duration_ms": 2,
+        "candidates": 40
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "77a594a7-6d99-48a9-b5d3-b56a5b54bc96",
+      "parent_span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "name": "diversify",
+      "kind": "filter",
+      "start_time": "2026-07-06T14:09:21.739190+00:00",
+      "end_time": "2026-07-06T14:09:21.739190+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {},
+      "outputs": {},
+      "metrics": {
+        "name": "diversify",
+        "duration_ms": 0,
+        "input_candidates": 40,
+        "selected": 2
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "ab2e64c0-53d6-4e91-9baa-c9e6e4e181dd",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "context.structured_filter",
+      "kind": "filter",
+      "start_time": "2026-07-06T14:09:21.748740+00:00",
+      "end_time": "2026-07-06T14:09:21.748740+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "context_count": 2,
+        "tool_summary": {
+          "backend": "sqlite",
+          "product_count": 0,
+          "order_count": 1,
+          "order_item_count": 1,
+          "mentioned_skus": [],
+          "missing_skus": [],
+          "mentioned_order_ids": [
+            "ORD-***1003"
+          ],
+          "missing_order_ids": [],
+          "tool_call_count": 2,
+          "return_eligibility_count": 0,
+          "review_summary_count": 0,
+          "similar_case_count": 0
+        }
+      },
+      "outputs": {
+        "filter_name": "structured_entity_filter",
+        "before_count": 2,
+        "after_count": 2,
+        "removed": [],
+        "confirmed_product_ids": []
+      },
+      "metrics": {},
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "c70da91c-4d5f-4f66-a7ec-245abeece22c",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "generation.llm",
+      "kind": "llm",
+      "start_time": "2026-07-06T14:09:21.748740+00:00",
+      "end_time": "2026-07-06T14:09:21.748740+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "generator": "TemplateAnswerGenerator",
+        "context_ids": [
+          "doc:product:P-BABY-001#b5c4f3e2496ef945",
+          "doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e"
+        ],
+        "weak_retrieval": false
+      },
+      "outputs": {
+        "answer_preview": "Order ORD-***1003 is delivered with delivery status late delivery reported. It contains SKU BABY-MONITOR-01 and total $89.99. Items: BABY-MONITOR-01 x1 ($89.99). Tool evidence: [tool:sql.order_by_id:ORD-***1003], [tool:sql.order_items_by_order_id",
+        "citations": [
+          "[doc:product:P-BABY-001#b5c4f3e2496ef945]",
+          "[doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e]"
+        ],
+        "prompt_artifact_id": "a477f26a-6a04-4e35-bedf-2247316b9ef1"
+      },
+      "metrics": {
+        "latency_ms": 0,
+        "input_context_count": 2,
+        "output_chars": 372
+      },
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "cccd28c6-0bfd-43c0-b10c-37e8cca56a2e",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "citation.validate",
+      "kind": "grader",
+      "start_time": "2026-07-06T14:09:21.748740+00:00",
+      "end_time": "2026-07-06T14:09:21.748740+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "citations": [
+          "[doc:product:P-BABY-001#b5c4f3e2496ef945]",
+          "[doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e]"
+        ],
+        "must_cite": true
+      },
+      "outputs": {
+        "citation_schema_ok": 1.0,
+        "answer_citation_precision": 1.0,
+        "answer_citation_recall": 1.0,
+        "citation_grounded_rate": 1.0,
+        "citation_count": 2,
+        "answer_citation_count": 2,
+        "citation_failures": [],
+        "citation_payload": [
+          {
+            "source": "product",
+            "doc_id": "P-BABY-001",
+            "chunk_id": "b5c4f3e2496ef945",
+            "rank": 1,
+            "doc_type": "product"
+          },
+          {
+            "source": "kb",
+            "doc_id": "KB004_shipping_delivery_policy",
+            "chunk_id": "71d755fa30c11a8e",
+            "rank": 2,
+            "doc_type": "policy_markdown"
+          }
+        ]
+      },
+      "metrics": {},
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "b093d73b-8e6f-4317-a086-8920ecb21a99",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "tool_citation.validate",
+      "kind": "grader",
+      "start_time": "2026-07-06T14:09:21.748740+00:00",
+      "end_time": "2026-07-06T14:09:21.748740+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "tool_citations": [
+          "[tool:sql.order_by_id:ORD-***1003]",
+          "[tool:sql.order_items_by_order_id:ORD-***1003]"
+        ],
+        "must_cite": true
+      },
+      "outputs": {
+        "tool_citation_schema_ok": 1.0,
+        "answer_tool_citation_precision": 1.0,
+        "answer_tool_citation_recall": 1.0,
+        "tool_citation_count": 2,
+        "answer_tool_citation_count": 2,
+        "tool_citation_failures": [],
+        "tool_citation_payload": [
+          {
+            "tool_name": "sql.order_by_id",
+            "entity": "ORD-***1003"
+          },
+          {
+            "tool_name": "sql.order_items_by_order_id",
+            "entity": "ORD-***1003"
+          }
+        ]
+      },
+      "metrics": {},
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "5b2d5400-435a-4c48-bdcb-f1c30a7eabb3",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "grader.score",
+      "kind": "grader",
+      "start_time": "2026-07-06T14:09:21.748740+00:00",
+      "end_time": "2026-07-06T14:09:21.748740+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "intent": "sku_order",
+        "risk_level": "medium"
+      },
+      "outputs": {
+        "scores": {
+          "top_rerank_score": 0.9985,
+          "citation_rate": 1.0,
+          "groundedness_proxy": 1.0,
+          "relevance_proxy": 1.0,
+          "tool_citation_schema_ok": 1.0,
+          "answer_tool_citation_precision": 1.0,
+          "answer_tool_citation_recall": 1.0,
+          "evidence_gap_count": 0.0
+        },
+        "evidence_gaps": []
+      },
+      "metrics": {},
+      "tags": {}
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "92372b21-4ca2-4c83-a064-85cac7883d40",
+      "parent_span_id": "6a3f7fca-6769-4598-b22b-f68a6d595d7e",
+      "name": "decision",
+      "kind": "decision",
+      "start_time": "2026-07-06T14:09:21.748740+00:00",
+      "end_time": "2026-07-06T14:09:21.748740+00:00",
+      "duration_ms": 0,
+      "attempt": 1,
+      "status": "ok",
+      "error": null,
+      "inputs": {
+        "scores": {
+          "top_rerank_score": 0.9985,
+          "citation_rate": 1.0,
+          "groundedness_proxy": 1.0,
+          "relevance_proxy": 1.0,
+          "tool_citation_schema_ok": 1.0,
+          "answer_tool_citation_precision": 1.0,
+          "answer_tool_citation_recall": 1.0,
+          "evidence_gap_count": 0.0
+        },
+        "evidence_gaps": [],
+        "max_retries": 1
+      },
+      "outputs": {
+        "action": "answer",
+        "decision_reason": "answer because required evidence contract is satisfied",
+        "evidence_gaps": [],
+        "next_query": null,
+        "next_sources": null
+      },
+      "metrics": {},
+      "tags": {}
+    }
+  ],
+  "trace_artifacts": [
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "artifact_id": "7c38f723-d8fa-4324-8a2e-a54a8d465749",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "artifact_type": "retrieval_candidates_attempt_1",
+      "path": null,
+      "content_hash": "sha256:843afdb65ea3c704e571942276236a01b8a33dc850297ee28ed3e85826ca68de",
+      "preview": "[{\"bm25_score\": 43.577181, \"chunk_id\": \"b574afb70eabbf5a\", \"content_hash\": \"sha256:21aec81cefa62bf4d0af3f0155618ea98288b20d7d692f3318ee8e16d05326b9\", \"dense_score\": 0.273219, \"doc_id\": \"scanned_damage_claim\", \"doc_type\": \"ocr_image\", \"dropp",
+      "metadata": {
+        "attempt": 1,
+        "count": 40
+      }
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "artifact_id": "e754e36b-174f-4047-aa96-b63909a769a5",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "artifact_type": "retrieved_contexts",
+      "path": null,
+      "content_hash": "sha256:df408a0943d1dad564adb63a22c31d4c1391f4a330d2bb645d46a452350641dd",
+      "preview": "[{\"chunk_id\": \"b5c4f3e2496ef945\", \"content_hash\": \"sha256:3f3c93c8cfd8bfc41eea13d2a7d3dd2a0b13905ccf58898352c9b265bca0fe7b\", \"doc_id\": \"P-BABY-001\", \"doc_type\": \"product\", \"preview\": \"nightview baby monitor baby_products a baby monitor for ",
+      "metadata": {
+        "attempt": 1
+      }
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "artifact_id": "a477f26a-6a04-4e35-bedf-2247316b9ef1",
+      "span_id": "c70da91c-4d5f-4f66-a7ec-245abeece22c",
+      "artifact_type": "generation_context",
+      "path": null,
+      "content_hash": "sha256:40f83c5c4204dbcbe25888dec8b9abfaf09fe878ee98c42a518c489bb23ff27c",
+      "preview": "{\"context_ids\": [\"doc:product:P-BABY-001#b5c4f3e2496ef945\", \"doc:kb:KB004_shipping_delivery_policy#71d755fa30c11a8e\"], \"contexts\": [{\"chunk_id\": \"b5c4f3e2496ef945\", \"content_hash\": \"sha256:3f3c93c8cfd8bfc41eea13d2a7d3dd2a0b13905ccf58898352c",
+      "metadata": {
+        "attempt": 1,
+        "prompt_policy": "hash+preview"
+      }
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "artifact_id": "3da37911-1834-455c-9cb1-0c0333cd1737",
+      "span_id": "cccd28c6-0bfd-43c0-b10c-37e8cca56a2e",
+      "artifact_type": "citation_validation",
+      "path": null,
+      "content_hash": "sha256:328a5f9562ff306195ad828d8d09362b3110a571589b435b0446edfc4b4728cc",
+      "preview": "{\"answer_citation_count\": 2, \"answer_citation_precision\": 1.0, \"answer_citation_recall\": 1.0, \"citation_count\": 2, \"citation_failures\": [], \"citation_grounded_rate\": 1.0, \"citation_payload\": [{\"chunk_id\": \"b5c4f3e2496ef945\", \"doc_id\": \"P-BA",
+      "metadata": {
+        "attempt": 1
+      }
+    },
+    {
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "artifact_id": "372cba49-08d8-426a-b048-03fb39b7735a",
+      "span_id": "b093d73b-8e6f-4317-a086-8920ecb21a99",
+      "artifact_type": "tool_citation_validation",
+      "path": null,
+      "content_hash": "sha256:392b465e79ae766fdf1c0b776f6fcf6ef81b67345e31566072e07704646391b4",
+      "preview": "{\"answer_tool_citation_count\": 2, \"answer_tool_citation_precision\": 1.0, \"answer_tool_citation_recall\": 1.0, \"tool_citation_count\": 2, \"tool_citation_failures\": [], \"tool_citation_payload\": [{\"entity\": \"ORD-***1003\", \"tool_name\": \"sql.order",
+      "metadata": {
+        "attempt": 1
+      }
+    }
+  ],
+  "retrieval_candidates": [
+    {
+      "source": "kb",
+      "doc_id": "scanned_damage_claim",
+      "chunk_id": "b574afb70eabbf5a",
+      "doc_type": "ocr_image",
+      "rank_dense": 5,
+      "rank_bm25": 1,
+      "rank_rrf": 1,
+      "rank_final": null,
+      "dense_score": 0.273219,
+      "bm25_score": 43.577181,
+      "rrf_score": 0.031778,
+      "rerank_score": 0.721054,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:21aec81cefa62bf4d0af3f0155618ea98288b20d7d692f3318ee8e16d05326b9",
+      "preview": "damage claim form order id: ORD-***1001 sku: beauty-serum-01 issue type: leaking bottle and broken pump customer note: package arrived wet and half of the serum wa",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B00ROA3LOQ",
+      "chunk_id": "3f03bd2d1d54d689",
+      "doc_type": "product_profile",
+      "rank_dense": 9,
+      "rank_bm25": 6,
+      "rank_rrf": 2,
+      "rank_final": null,
+      "dense_score": 0.265798,
+      "bm25_score": 15.762504,
+      "rrf_score": 0.029644,
+      "rerank_score": 0.481677,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:5274045371c76c3dd239db89e59930edde9ed3e61a5026d6124625a4036d1dec",
+      "preview": ". top review aspects: skin_scent=2, delivery=1, price_value=1, quality_damage=1. positive signals: finally found healthy organic baby products for baby's skin.<",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B07FCDMPM3",
+      "chunk_id": "20519200460725c1",
+      "doc_type": "product_profile",
+      "rank_dense": 7,
+      "rank_bm25": 10,
+      "rank_rrf": 3,
+      "rank_final": null,
+      "dense_score": 0.269607,
+      "bm25_score": 14.253251,
+      "rrf_score": 0.029211,
+      "rerank_score": 0.496693,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:6119b5e16bac01560e7b0fdbb58d8139b01ffea43137bdd7415e4ccd9d9060bd",
+      "preview": "bly over baby’s diaper, pants or buttoned-up onesie requiring zero skin contact. with zero wifi, radio or bluetooth frequencies, this is a baby newborn essentia",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B07FCDMPM3",
+      "chunk_id": "cfdfc44f7fb3e253",
+      "doc_type": "product_profile",
+      "rank_dense": 4,
+      "rank_bm25": 14,
+      "rank_rrf": 4,
+      "rank_final": null,
+      "dense_score": 0.277615,
+      "bm25_score": 13.150608,
+      "rrf_score": 0.029139,
+      "rerank_score": 0.508474,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:273d3c753a677ffd85d95bcdd64ad7c7e107a7068461f80c2ff98b1c9bef2fa1",
+      "preview": "product profile for levana oma sense baby abdominal movement monitor - baby sleep monitor with wakeup technology - rousing vibrations, audio & lights stimulates",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B00BE6CUWK",
+      "chunk_id": "19cc15df739e23cd",
+      "doc_type": "product_profile",
+      "rank_dense": 6,
+      "rank_bm25": 29,
+      "rank_rrf": 5,
+      "rank_final": null,
+      "dense_score": 0.271297,
+      "bm25_score": 11.559746,
+      "rrf_score": 0.026387,
+      "rerank_score": 0.483426,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:601d42c2f9b59311ba9b4c7c4f64d97f400aaa1472fd1f1ca0ebda20a7b0b173",
+      "preview": "product profile for belkin baby moniter - firmware update (discontinued by manufacturer) sku b00be6cuwk in category baby_products. catalog rating 3.5 from 41 pu",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "P-BABY-001",
+      "chunk_id": "b5c4f3e2496ef945",
+      "doc_type": "product",
+      "rank_dense": 23,
+      "rank_bm25": 15,
+      "rank_rrf": 6,
+      "rank_final": 1,
+      "dense_score": 0.246844,
+      "bm25_score": 12.868316,
+      "rrf_score": 0.025382,
+      "rerank_score": 0.998533,
+      "forced": false,
+      "forced_reason": null,
+      "selected": true,
+      "dropped_reason": null,
+      "content_hash": "sha256:3f3c93c8cfd8bfc41eea13d2a7d3dd2a0b13905ccf58898352c9b265bca0fe7b",
+      "preview": "nightview baby monitor baby_products a baby monitor for nursery use with night vision, audio, and temperature alerts. night vision two way audio temperature sen",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B09JMR2QL7",
+      "chunk_id": "1395aa23cc015026",
+      "doc_type": "product_profile",
+      "rank_dense": 1,
+      "rank_bm25": null,
+      "rank_rrf": 7,
+      "rank_final": null,
+      "dense_score": 0.319357,
+      "bm25_score": 10.050359,
+      "rrf_score": 0.016393,
+      "rerank_score": 0.503901,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:2197155fcb9601fb51e99bddc9aff28b482d7fbbb1d7989541d089265e1c4520",
+      "preview": "baby sleepers, and baby fleece pajamas. we also offer baby socks and baby shoes. our baby girl shoes are sure to add a special flair to her favorite baby outfit",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B0BHDLD45H",
+      "chunk_id": "210c5891a89bc694",
+      "doc_type": "product_profile",
+      "rank_dense": 2,
+      "rank_bm25": null,
+      "rank_rrf": 8,
+      "rank_final": null,
+      "dense_score": 0.29589,
+      "bm25_score": 8.094266,
+      "rrf_score": 0.016129,
+      "rerank_score": 0.458191,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:b09e5273a1b9f9df3604c067cbc58770ab31fa68b0ebcdc365326e07d7985fbd",
+      "preview": "product profile for my little north star baby shampoo, gentle head-to-toe 2-in-1 baby soap, baby shampoo and body wash and natural baby shampoo and body wash + ",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "KB006_return_status_matrix",
+      "chunk_id": "6a612c8c54980c92",
+      "doc_type": "html_policy_page",
+      "rank_dense": null,
+      "rank_bm25": 2,
+      "rank_rrf": 9,
+      "rank_final": null,
+      "dense_score": 0.17911,
+      "bm25_score": 20.240701,
+      "rrf_score": 0.016129,
+      "rerank_score": 0.686222,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:460484373fd22a023b790dee51fa8aa41de5b171715e4305ccac4d18e956b336",
+      "preview": "return status matrix return status matrix support agents must classify return requests by item condition, delivery date, and evidence status before offering a r",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B08K47J49M",
+      "chunk_id": "01c78af6ab723ea3",
+      "doc_type": "product_profile",
+      "rank_dense": 3,
+      "rank_bm25": null,
+      "rank_rrf": 10,
+      "rank_final": null,
+      "dense_score": 0.278609,
+      "bm25_score": 8.054856,
+      "rrf_score": 0.015873,
+      "rerank_score": 0.449787,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:3da7fae2faedaa3cf42687a5b912319b4c1ae6ca91eab3f483d3dc0580bda094",
+      "preview": "s delicate skin, leaving it softer and more nourished than other baby bath soap. also effective as a handwash., formulated to be gentle, this baby wash formula ",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Software-B06XG9G1BS",
+      "chunk_id": "8283cff88a888723",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 3,
+      "rank_rrf": 11,
+      "rank_final": null,
+      "dense_score": 0.05159,
+      "bm25_score": 17.788386,
+      "rrf_score": 0.015873,
+      "rerank_score": 0.287351,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:b6367b682ea0e9711c6acf4406bdb4de55d384c24d5cab20c76356702b410fab",
+      "preview": "ord fans!this brain challenging adventure around the world is sure to entertain! safe travels!features:gorgeous, crisp graphics 3 ways to play - traditional, ch",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B08W7VYTH2",
+      "chunk_id": "ed31f4ee26b0d230",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 4,
+      "rank_rrf": 12,
+      "rank_final": null,
+      "dense_score": 0.195749,
+      "bm25_score": 16.952421,
+      "rrf_score": 0.015625,
+      "rerank_score": 0.446875,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:0bd30641a184e5d9659d4982380b25a2b7b849e159e368e58a2f3d753f760c0c",
+      "preview": "security of a structured carrier with the comfort and connection of a baby wrap. this perfectly uncomplicated design gives you adjustability, a soft structured ",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Software-B00VPI6T7Y",
+      "chunk_id": "75364a2a49a7194b",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 5,
+      "rank_rrf": 13,
+      "rank_final": null,
+      "dense_score": 0.026481,
+      "bm25_score": 15.820238,
+      "rrf_score": 0.015385,
+      "rerank_score": 0.265018,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:dd5e9f4a52e586bf2e9739c2fafbabe31f8b524721dcf77c41e45dc9c1f440bd",
+      "preview": "ord number of steps when they are locked because of smartphone's specifications. it's not a bug of pedometer.if you have ideas to improve pedometer step counter",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "KB004_shipping_delivery_policy",
+      "chunk_id": "71d755fa30c11a8e",
+      "doc_type": "policy_markdown",
+      "rank_dense": null,
+      "rank_bm25": 7,
+      "rank_rrf": 14,
+      "rank_final": 2,
+      "dense_score": 0.230079,
+      "bm25_score": 14.914105,
+      "rrf_score": 0.014925,
+      "rerank_score": 0.703928,
+      "forced": false,
+      "forced_reason": null,
+      "selected": true,
+      "dropped_reason": null,
+      "content_hash": "sha256:a39876295aa26c4a98e0ef9a06f69192a1a8ac8140f19402a488856c95805400",
+      "preview": "# shipping and digital delivery policy physical delivery issues require checking carrier status, delivery address, and delivery date. late delivery does not aut",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B08K47J49M",
+      "chunk_id": "1e9e2766e18d9f65",
+      "doc_type": "product_profile",
+      "rank_dense": 8,
+      "rank_bm25": null,
+      "rank_rrf": 15,
+      "rank_final": null,
+      "dense_score": 0.268049,
+      "bm25_score": 8.25029,
+      "rrf_score": 0.014706,
+      "rerank_score": 0.457171,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:4958770e546f0d818d71f3e8ca4da15bc017edaa2a32228bfa8d5e2a4671e31c",
+      "preview": "product profile for baby dove tip to toe baby body wash for baby's sensitive skin sensitive moisture washes away bacteria, fragrance-free and hypoallergenic bab",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B09GP1YWHJ",
+      "chunk_id": "31645829f9a99f19",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 8,
+      "rank_rrf": 16,
+      "rank_final": null,
+      "dense_score": 0.204569,
+      "bm25_score": 14.841905,
+      "rrf_score": 0.014706,
+      "rerank_score": 0.461173,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:b404e42635636a44e63fa30e0de164213642ea0fa855c251a12c77d4717d5529",
+      "preview": "product profile for p'ure papayacare papaya baby body butter,3.53 ounces sku b09gp1ywhj in category baby_products. catalog rating 4.0 from 9 public ratings; sub",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B0BV9RBY3X",
+      "chunk_id": "9cca7097db23215d",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 9,
+      "rank_rrf": 17,
+      "rank_final": null,
+      "dense_score": 0.131689,
+      "bm25_score": 14.677195,
+      "rrf_score": 0.014493,
+      "rerank_score": 0.4234,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:6f4d9f07e80d37152445c173cacb75d0994460a020caa48c9c89a3a0bcdec175",
+      "preview": "x baby registry benefit page, the contents in the box changes from time to time. see details on the welcome box baby registry benefit page, can only be shipped ",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B09JMR2QL7",
+      "chunk_id": "d0f815cf0cc0ba3a",
+      "doc_type": "product_profile",
+      "rank_dense": 10,
+      "rank_bm25": null,
+      "rank_rrf": 18,
+      "rank_final": null,
+      "dense_score": 0.263745,
+      "bm25_score": 6.074624,
+      "rrf_score": 0.014286,
+      "rerank_score": 0.370183,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:96820b49a3fa3efd01fa8ab88ee76b8da9e022a00c4381f3452bdbc6029a298e",
+      "preview": "tops, and baby bottoms. our baby swimwear and baby swimsuits are a big hit too! if it’s bedding you’re looking for, we have crib sheets, changing pad, crib mobi",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B09HLZY2MJ",
+      "chunk_id": "461878f6d1333dc1",
+      "doc_type": "product_profile",
+      "rank_dense": 11,
+      "rank_bm25": null,
+      "rank_rrf": 19,
+      "rank_final": null,
+      "dense_score": 0.26343,
+      "bm25_score": 8.206569,
+      "rrf_score": 0.014085,
+      "rerank_score": 0.445768,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:17293229550fcc75e17e1d4a55b2f07bd1ae7e3f864a848a24418910bfda14a2",
+      "preview": "product profile for myhomebody silicone bib with elephant | adjustable fit baby bibs for baby boy and baby girl | waterproof silicone baby bibs for baby feeding",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "refund_reason_codes",
+      "chunk_id": "0e2b69b82391aa83",
+      "doc_type": "structured_table",
+      "rank_dense": null,
+      "rank_bm25": 11,
+      "rank_rrf": 20,
+      "rank_final": null,
+      "dense_score": 0.186939,
+      "bm25_score": 13.934643,
+      "rrf_score": 0.014085,
+      "rerank_score": 0.646803,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:b0571827f00e156edaa82972a9681c8ac7ed8c8cafec54b8f260b85c55422d60",
+      "preview": "ship replacement part; risk_level: medium. row 5. reason_code: late_delivery; category: shipping; customer_signal: late carrier delay; required_evidence: carrie",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B09YY1TNTS",
+      "chunk_id": "9ec6c7d8f9011d95",
+      "doc_type": "product_profile",
+      "rank_dense": 12,
+      "rank_bm25": null,
+      "rank_rrf": 21,
+      "rank_final": null,
+      "dense_score": 0.263378,
+      "bm25_score": 8.503135,
+      "rrf_score": 0.013889,
+      "rerank_score": 0.453156,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:0078f1a96d9c3a6d6f449792ceb0bd707ed1d16c8f9a8f4e2266ce256f6cc8fe",
+      "preview": "product profile for hopene baby nail trimmer electric,gentle electric nail file for baby,infant,toddler,newborn,safer than baby scissors,effective & super quiet",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Software-B0075ASHQM",
+      "chunk_id": "68faa1c2bad97804",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 12,
+      "rank_rrf": 22,
+      "rank_final": null,
+      "dense_score": 0.134132,
+      "bm25_score": 13.901867,
+      "rrf_score": 0.013889,
+      "rerank_score": 0.343288,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:05d166f64399f771f356a2f8f50de5a7d1dc4a8db494a905df8d6f675db1e90c",
+      "preview": "product profile for funny facts free 8000+ sku b0075ashqm in category software. catalog rating 2.9 from 297 public ratings; subset reviews 3 with average 3.333.",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B0BXYQ43SK",
+      "chunk_id": "585a965e0b57e6f7",
+      "doc_type": "product_profile",
+      "rank_dense": 13,
+      "rank_bm25": null,
+      "rank_rrf": 23,
+      "rank_final": null,
+      "dense_score": 0.259219,
+      "bm25_score": 10.315488,
+      "rrf_score": 0.013699,
+      "rerank_score": 0.504276,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:7b340dbf4df821ed316f773aa23cb74ce7f9705fe2698e561c75872cefc7da5c",
+      "preview": "product profile for baby nest designs unicorn baby hangers and closet dividers – cute nursery organizer with 7x baby size dividers (infant newborn clothing to 2",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B0045I6IAO",
+      "chunk_id": "55611f65aed51c26",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 13,
+      "rank_rrf": 24,
+      "rank_final": null,
+      "dense_score": 0.155543,
+      "bm25_score": 13.66407,
+      "rrf_score": 0.013699,
+      "rerank_score": 0.445327,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:57f691ace0a072c210d1b2d99b7a3488afe0ced54ad8d410a494ae4e890a5748",
+      "preview": "product profile for philips avent scf190/01 soothie 0-3mth green/green, 2 count sku b0045i6iao in category baby_products. catalog rating 4.7 from 10180 public r",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B0BXTNL2NY",
+      "chunk_id": "e303bac9b79f60ee",
+      "doc_type": "product_profile",
+      "rank_dense": 14,
+      "rank_bm25": null,
+      "rank_rrf": 25,
+      "rank_final": null,
+      "dense_score": 0.259116,
+      "bm25_score": 5.965442,
+      "rrf_score": 0.013514,
+      "rerank_score": 0.365138,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:53dd4ec508f345b069d2504c66dd79b68dc68c5098582b9e9bcaaaeb9bf23e26",
+      "preview": "talog rating 4.7 from 12987 public ratings; subset reviews 9 with average 4.222. features: lavender baby shampoo: make bath time easy with this tear-free baby s",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B0BVKY582F",
+      "chunk_id": "1b62497fffea2354",
+      "doc_type": "product_profile",
+      "rank_dense": 15,
+      "rank_bm25": null,
+      "rank_rrf": 26,
+      "rank_final": null,
+      "dense_score": 0.258309,
+      "bm25_score": 7.760592,
+      "rrf_score": 0.013333,
+      "rerank_score": 0.437058,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:4cc73a3fc099f3f33b4546f1c36470b74f42c6ce3687517b47ea71df9e5909bb",
+      "preview": "product profile for johnson's baby powder for delicate skin, hypoallergenic and free of parabens, phthalates, and dyes for baby skin care, 1.5 oz sku b0bvky582f",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B00G4EPD12",
+      "chunk_id": "6c55bdb3eb1333e2",
+      "doc_type": "product_profile",
+      "rank_dense": 16,
+      "rank_bm25": null,
+      "rank_rrf": 27,
+      "rank_final": null,
+      "dense_score": 0.25718,
+      "bm25_score": 7.743137,
+      "rrf_score": 0.013158,
+      "rerank_score": 0.439057,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:82f709cd4556ff510bec46d7f81a838236250db4f3a6b8b6de72966c53929356",
+      "preview": "product profile for johnson's baby powder for delicate skin, hypoallergenic and free of parabens, phthalates, and dyes for baby skin care, 22 oz (pack of 3) sku",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B09BDTMFF1",
+      "chunk_id": "cec30ad159bcde69",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 16,
+      "rank_rrf": 28,
+      "rank_final": null,
+      "dense_score": 0.201303,
+      "bm25_score": 12.633314,
+      "rrf_score": 0.013158,
+      "rerank_score": 0.473318,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:247408f2e3774bf6fdb9ae9c439ff2b805cf94bff391e083c0b34010f2326a62",
+      "preview": "product profile for rocced [upgraded] suction plates for toddlers, silicone plates with suction for baby divided, baby spoon fork set for toddler baby dishes ki",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Baby_Products-B08GZL6TVM",
+      "chunk_id": "0a8fa9ee133e161e",
+      "doc_type": "product_profile",
+      "rank_dense": 17,
+      "rank_bm25": null,
+      "rank_rrf": 29,
+      "rank_final": null,
+      "dense_score": 0.255765,
+      "bm25_score": 7.02102,
+      "rrf_score": 0.012987,
+      "rerank_score": 0.39763,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:ba76f131fdf1a8df7c5ea0ba2df4ab462efdfb729743a1500c976a48672d206a",
+      "preview": "oo and conditioner leaves baby's delicate hair soft, smooth, and easy to manage. the hypoallergenic, tear-free formula contains vitamin e and natural oat extrac",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "product",
+      "doc_id": "PP-Software-B00BMAR5CI",
+      "chunk_id": "4b436d6667fbb481",
+      "doc_type": "product_profile",
+      "rank_dense": null,
+      "rank_bm25": 17,
+      "rank_rrf": 30,
+      "rank_final": null,
+      "dense_score": 0.062889,
+      "bm25_score": 12.529526,
+      "rrf_score": 0.012987,
+      "rerank_score": 0.308778,
+      "forced": false,
+      "forced_reason": null,
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:a552593c115c593275f343b6428896d86d4a5503e12299e01fa79552e54fc949",
+      "preview": "product profile for alaska airlines travel app sku b00bmar5ci in category software. catalog rating 4.4 from 1741 public ratings; subset reviews 2 with average 2",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "KB001_return_refund_policy",
+      "chunk_id": "ee79e051ef7a427c",
+      "doc_type": "policy_markdown",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.125061,
+      "bm25_score": 9.366702,
+      "rrf_score": 0.0,
+      "rerank_score": 0.621698,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:fbcc93d2a499e34e29d26bf2fd473df904fe42b30d498f1fa3c955f2b64950b6",
+      "preview": "# return and refund policy customers can request a return within 30 days of delivery for damaged, defective, or incorrect items. the support team should verify ",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "KB001_return_refund_policy",
+      "chunk_id": "96522358b4eef486",
+      "doc_type": "policy_markdown",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.163956,
+      "bm25_score": 11.321552,
+      "rrf_score": 0.0,
+      "rerank_score": 0.656978,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:b3ee260ec120c0140d65d6c1e570409e42ed93e7433f65e1f6d470e3bc7c34e7",
+      "preview": "pport team may offer replacement or refund after validation. high-risk refund answers must cite this policy and should ask for missing order details when the or",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "KB002_warranty_policy",
+      "chunk_id": "59391347ce77614f",
+      "doc_type": "policy_markdown",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.087443,
+      "bm25_score": 1.379691,
+      "rrf_score": 0.0,
+      "rerank_score": 0.21377,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:a092ee5cc657d390066edd8342c36a7a385b6b8290af74a52c3dfc4d6755f947",
+      "preview": "# warranty policy electronics and powered beauty devices have a 12 month limited warranty for manufacturing defects. warranty coverage requires proof of purchas",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "KB003_payment_refund_policy",
+      "chunk_id": "58aeba54f84fefb9",
+      "doc_type": "policy_markdown",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.077023,
+      "bm25_score": 5.413206,
+      "rrf_score": 0.0,
+      "rerank_score": 0.483286,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:dd51de55d347963e95649e37c63210dec940b4be649be3ef35464226aff31af2",
+      "preview": "# payment and subscription refund policy digital subscriptions can be cancelled from the account page. renewal refunds depend on renewal date, usage, and local ",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "KB005_missing_parts_policy",
+      "chunk_id": "50e5f95bcca6db24",
+      "doc_type": "policy_markdown",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.108927,
+      "bm25_score": 9.421865,
+      "rrf_score": 0.0,
+      "rerank_score": 0.601121,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:e95434fd1d6f5b70bd5793cac3bd6fb250b5b962ecd4cc87698c104568dfd99c",
+      "preview": "# missing parts policy customers should report missing accessories or parts within 14 days of delivery. support should collect the order number, sku, package ph",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "KB007_carrier_exception_notice",
+      "chunk_id": "0575c8181b2f2c9c",
+      "doc_type": "text_notice",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.054463,
+      "bm25_score": 4.16625,
+      "rrf_score": 0.0,
+      "rerank_score": 0.426943,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:355ce869be2a10786c49a9257899f6152f302673c37f269bd6cf28ef9b80c8ed",
+      "preview": "# carrier exception notice carrier exception codes should be checked before promising a delivery refund. weather delay, address correction, and access issue exc",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "refund_reason_codes",
+      "chunk_id": "b7d468a40cb38333",
+      "doc_type": "structured_table",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.06913,
+      "bm25_score": 8.032424,
+      "rrf_score": 0.0,
+      "rerank_score": 0.538709,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:f11a8abc3d946ac2164b70da971f31d143cde882f995639db8c2f67ef440d7af",
+      "preview": "table document refund_reason_codes. columns: reason_code, category, customer_signal, required_evidence, recommended_action, risk_level. row 1. reason_code: dama",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "refund_reason_codes",
+      "chunk_id": "1dd31190cf0844e4",
+      "doc_type": "structured_table",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.080322,
+      "bm25_score": 5.254312,
+      "rrf_score": 0.0,
+      "rerank_score": 0.467074,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:644619e4f9e8d878ea3a4e46c81d87793e50becb5552e5e23c4d5eb06cf21b53",
+      "preview": "te replacement or refund; risk_level: high. row 2. reason_code: digital_non_delivery; category: digital_delivery; customer_signal: missing license key email; re",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "refund_reason_codes",
+      "chunk_id": "5e3a66ec7b71477c",
+      "doc_type": "structured_table",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.055929,
+      "bm25_score": 6.07932,
+      "rrf_score": 0.0,
+      "rerank_score": 0.315503,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:16a2e3baae3d784de63ca08a096a507de92be79db05f30047734c141d4bd9b48",
+      "preview": "r escalate fulfillment; risk_level: medium. row 3. reason_code: subscription_renewal; category: payment; customer_signal: unexpected renewal cancellation; requi",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    },
+    {
+      "source": "kb",
+      "doc_id": "refund_reason_codes",
+      "chunk_id": "63d8b47e24b444c9",
+      "doc_type": "structured_table",
+      "rank_dense": null,
+      "rank_bm25": null,
+      "rank_rrf": null,
+      "rank_final": null,
+      "dense_score": 0.02747,
+      "bm25_score": 0.392536,
+      "rrf_score": 0.0,
+      "rerank_score": 0.151326,
+      "forced": true,
+      "forced_reason": "doc_type_policy",
+      "selected": false,
+      "dropped_reason": "diversify_or_top_k",
+      "content_hash": "sha256:22260d23804eea3a4ff4f667f12cf9e369d5780aca95cf93449824d649cf1232",
+      "preview": "ly renewal refund policy; risk_level: high. row 4. reason_code: missing_part; category: post_purchase; customer_signal: cap accessory missing; required_evidence",
+      "trace_id": "ce150d87-5b36-4a75-8d91-d6bf311d9b66",
+      "span_id": "6ce15e98-1194-4707-9c9e-b2bebb9bfdc9",
+      "attempt": 1
+    }
+  ]
+}

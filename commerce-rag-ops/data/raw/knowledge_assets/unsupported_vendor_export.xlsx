@@ -1,0 +1,3 @@
+Placeholder for unsupported binary spreadsheet export.
+
+The loader intentionally skips this file type unless a spreadsheet parser is added. It is kept as an ingestion-boundary fixture.

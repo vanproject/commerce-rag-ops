@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CommerceRAG Ops</title>
+  <style>
+    :root {
+      --ink: #182026;
+      --muted: #66717c;
+      --line: #d9dee3;
+      --bg: #f7f8fa;
+      --panel: #ffffff;
+      --teal: #0f766e;
+      --rose: #be3455;
+      --amber: #a16207;
+      --blue: #2563eb;
+      --green: #15803d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      letter-spacing: 0;
+    }
+    header {
+      min-height: 132px;
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(320px, 520px);
+      align-items: stretch;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .brand {
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.15;
+      font-weight: 760;
+    }
+    .subline {
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 760px;
+    }
+    #flowCanvas {
+      width: 100%;
+      height: 132px;
+      display: block;
+      background: #eef6f5;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 380px minmax(0, 1fr);
+      min-height: calc(100vh - 132px);
+    }
+    aside {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    section {
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+      min-width: 0;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    textarea, input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 11px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+    }
+    textarea {
+      min-height: 138px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+    button {
+      border: 1px solid #0b5f59;
+      border-radius: 6px;
+      background: var(--teal);
+      color: #fff;
+      padding: 10px 12px;
+      font-weight: 720;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .examples {
+      display: grid;
+      gap: 8px;
+    }
+    .example {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 6px;
+      padding: 9px;
+      text-align: left;
+      color: var(--ink);
+      font-weight: 560;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+    }
+    .metric, .answer, .trace, .citations, .tools {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 6px;
+    }
+    .metric {
+      padding: 12px;
+      min-height: 72px;
+    }
+    .metric .value {
+      font-size: 23px;
+      font-weight: 780;
+      margin-top: 4px;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+      gap: 14px;
+      min-height: 0;
+    }
+    .answer, .trace, .citations, .tools {
+      padding: 14px;
+      min-width: 0;
+      overflow: auto;
+    }
+    .stack {
+      display: grid;
+      gap: 14px;
+      min-height: 0;
+    }
+    .answer-text {
+      line-height: 1.56;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      background: #fff;
+    }
+    .badge.intent { border-color: #99d5cf; color: var(--teal); }
+    .badge.risk { border-color: #f0c0cb; color: var(--rose); }
+    .badge.action { border-color: #c7d2fe; color: var(--blue); }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .citation-list {
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .tool-panel {
+      display: grid;
+      gap: 10px;
+    }
+    .tool-section {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+    .tool-section:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .tool-list {
+      display: grid;
+      gap: 8px;
+    }
+    .tool-row {
+      display: grid;
+      grid-template-columns: minmax(130px, 1fr) 86px 92px 76px;
+      gap: 8px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px;
+      background: #fff;
+      font-size: 12px;
+    }
+    .tool-name {
+      font-weight: 760;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .tool-meta {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .tool-pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 7px;
+      text-align: center;
+      background: #f8fafc;
+      color: var(--muted);
+    }
+    .tool-pill.ok { color: var(--green); border-color: #bbdec8; }
+    .tool-pill.warn { color: var(--amber); border-color: #edd39a; }
+    .tool-empty {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .status {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width: 880px) {
+      header, main, .workspace, .metrics { grid-template-columns: 1fr; }
+      #flowCanvas { height: 112px; }
+      main { min-height: auto; }
+      aside { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>CommerceRAG Ops</h1>
+      <div class="subline">Agentic RAG for ecommerce support, recommendations, and customer operations</div>
+    </div>
+    <canvas id="flowCanvas" width="720" height="180"></canvas>
+  </header>
+  <main>
+    <aside>
+      <div>
+        <label for="query">Query</label>
+        <textarea id="query">My serum bottle arrived leaking and the pump is broken. Can I get a refund?</textarea>
+      </div>
+      <div class="button-row">
+        <button id="askBtn">Ask</button>
+        <button class="secondary" id="traceBtn">Traces</button>
+      </div>
+      <div class="status" id="status">Ready</div>
+      <div class="examples">
+        <button class="example">Recommend a baby product with good reviews for night monitoring.</button>
+        <button class="example">What customer ops issues appear in negative reviews about baby products?</button>
+        <button class="example">Check SKU SOFT-PDF-01 price and delivery context.</button>
+      </div>
+    </aside>
+    <section>
+      <div class="metrics" id="metrics"></div>
+      <div class="workspace">
+        <div class="stack">
+          <div class="answer">
+            <div class="badges" id="badges"></div>
+            <div class="answer-text" id="answer">No answer yet.</div>
+          </div>
+          <div class="citations">
+            <label>Citations</label>
+            <div class="citation-list" id="citations"></div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="tools">
+            <label>Tool Trace</label>
+            <div class="tool-panel" id="tools">
+              <div class="tool-empty">No tool calls yet.</div>
+            </div>
+          </div>
+          <div class="trace">
+            <label>Trace</label>
+            <pre id="trace">[]</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    const queryEl = document.getElementById("query");
+    const statusEl = document.getElementById("status");
+    const answerEl = document.getElementById("answer");
+    const badgesEl = document.getElementById("badges");
+    const citationsEl = document.getElementById("citations");
+    const traceEl = document.getElementById("trace");
+    const toolsEl = document.getElementById("tools");
+    const metricsEl = document.getElementById("metrics");
+
+    function drawFlow() {
+      const canvas = document.getElementById("flowCanvas");
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#eef6f5";
+      ctx.fillRect(0, 0, w, h);
+      const nodes = [
+        ["Route", 76, 78, "#0f766e"],
+        ["Plan", 204, 52, "#2563eb"],
+        ["Retrieve", 340, 78, "#a16207"],
+        ["Grade", 486, 52, "#be3455"],
+        ["Answer", 620, 78, "#15803d"]
+      ];
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#7b8790";
+      for (let i = 0; i < nodes.length - 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(nodes[i][1] + 48, nodes[i][2]);
+        ctx.lineTo(nodes[i + 1][1] - 48, nodes[i + 1][2]);
+        ctx.stroke();
+      }
+      nodes.forEach(([label, x, y, color]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 34, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 15px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, x, y);
+      });
+    }
+
+    function metric(label, value, color) {
+      return `<div class="metric"><label>${label}</label><div class="value" style="color:${color}">${value}</div></div>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function latestToolEvent(trace) {
+      return [...(trace || [])].reverse().find(item => item.event === "tool_use") || {};
+    }
+
+    function latestRetrieveEvent(trace) {
+      return [...(trace || [])].reverse().find(item => item.event === "retrieve") || {};
+    }
+
+    function renderTools(data) {
+      const toolResults = data.tool_results || {};
+      const toolEvent = latestToolEvent(data.trace);
+      const retrieveEvent = latestRetrieveEvent(data.trace);
+      const plan = toolEvent.tool_plan || [];
+      const calls = toolResults.tool_calls || [];
+      const inferred = toolResults.context_inferred_products || [];
+      const constraints = retrieveEvent.tool_constraints || {};
+
+      const planHtml = plan.length
+        ? `<div class="tool-list">${plan.map(call => `
+            <div class="tool-row">
+              <div><div class="tool-name">${escapeHtml(call.tool_name)}</div><div class="tool-meta">${escapeHtml(call.reason)}</div></div>
+              <div class="tool-pill ${call.required === false ? "warn" : "ok"}">${call.required === false ? "optional" : "required"}</div>
+              <div class="tool-meta">${escapeHtml(JSON.stringify(call.input || {}))}</div>
+              <div></div>
+            </div>
+          `).join("")}</div>`
+        : `<div class="tool-empty">No planned tools.</div>`;
+
+      const callsHtml = calls.length
+        ? `<div class="tool-list">${calls.map(call => `
+            <div class="tool-row">
+              <div>
+                <div class="tool-name">${escapeHtml(call.tool_name)}</div>
+                <div class="tool-meta">${escapeHtml(call.evidence_id || "")}</div>
+              </div>
+              <div class="tool-pill ${call.found ? "ok" : "warn"}">${call.found ? "found" : "not found"}</div>
+              <div class="tool-pill ${call.policy_decision === "allowed" ? "ok" : "warn"}">${escapeHtml(call.policy_decision)}</div>
+              <div class="tool-meta">${escapeHtml(call.latency_ms)} ms</div>
+            </div>
+          `).join("")}</div>`
+        : `<div class="tool-empty">No executed tool calls.</div>`;
+
+      const constraintsHtml = Object.keys(constraints).length
+        ? `<pre>${escapeHtml(JSON.stringify(constraints, null, 2))}</pre>`
+        : `<div class="tool-empty">No retrieval constraints.</div>`;
+
+      const inferredHtml = inferred.length
+        ? `<pre>${escapeHtml(JSON.stringify(inferred, null, 2))}</pre>`
+        : `<div class="tool-empty">No context-inferred products.</div>`;
+
+      toolsEl.innerHTML = `
+        <div class="tool-section"><label>Tool Plan</label>${planHtml}</div>
+        <div class="tool-section"><label>Tool Calls</label>${callsHtml}</div>
+        <div class="tool-section"><label>Retrieval Constraints</label>${constraintsHtml}</div>
+        <div class="tool-section"><label>Context Inference</label>${inferredHtml}</div>
+      `;
+    }
+
+    async function loadMetrics() {
+      try {
+        const res = await fetch("/metrics");
+        const data = await res.json();
+        metricsEl.innerHTML = [
+          metric("Recall@5", data.retrieval["recall@5"], "#0f766e"),
+          metric("MRR", data.retrieval.mrr, "#2563eb"),
+          metric("NDCG@5", data.retrieval["ndcg@5"], "#a16207"),
+          metric("Citation", data.support_quality.citation_ok, "#15803d")
+        ].join("");
+      } catch (err) {
+        metricsEl.innerHTML = metric("Metrics", "n/a", "#66717c");
+      }
+    }
+
+    async function ask() {
+      statusEl.textContent = "Running";
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: queryEl.value, max_retries: 1 })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        statusEl.textContent = data.error || "Request failed";
+        return;
+      }
+      statusEl.textContent = `Trace ${data.trace_id || "local"}`;
+      answerEl.textContent = data.answer;
+      badgesEl.innerHTML = `
+        <span class="badge intent">${data.intent}</span>
+        <span class="badge risk">${data.risk_level}</span>
+        <span class="badge action">${data.action}</span>
+      `;
+      citationsEl.innerHTML = (data.citations || []).map(c => `<div>${c}</div>`).join("");
+      renderTools(data);
+      traceEl.textContent = JSON.stringify(data.trace || [], null, 2);
+      loadMetrics();
+    }
+
+    async function loadTraces() {
+      const res = await fetch("/traces");
+      const data = await res.json();
+      traceEl.textContent = JSON.stringify(data.traces || [], null, 2);
+      statusEl.textContent = "Recent traces";
+    }
+
+    document.getElementById("askBtn").addEventListener("click", ask);
+    document.getElementById("traceBtn").addEventListener("click", loadTraces);
+    document.querySelectorAll(".example").forEach(btn => {
+      btn.addEventListener("click", () => {
+        queryEl.value = btn.textContent;
+        ask();
+      });
+    });
+    drawFlow();
+    loadMetrics();
+  </script>
+</body>
+</html>

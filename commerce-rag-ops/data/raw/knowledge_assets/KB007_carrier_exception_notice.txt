@@ -1,0 +1,3 @@
+# Carrier Exception Notice
+
+Carrier exception codes should be checked before promising a delivery refund. Weather delay, address correction, and access issue exceptions require a carrier scan timestamp. Lost package cases may be escalated after 72 hours without a new scan.

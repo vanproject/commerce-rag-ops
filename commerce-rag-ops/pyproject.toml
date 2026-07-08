@@ -1,0 +1,19 @@
+[project]
+name = "commerce-rag-ops"
+version = "0.1.0"
+description = "Eval-first agentic RAG for ecommerce support, recommendations, and customer operations."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+data = ["datasets>=2.18.0"]
+qdrant = ["qdrant-client>=1.9.0"]
+docs = ["pypdf>=4.0.0", "pillow>=10.0.0", "pytesseract>=0.3.10"]
+embeddings = ["sentence-transformers>=3.0.0", "torch>=2.0.0", "transformers>=4.40.0"]
+reranker = ["sentence-transformers>=3.0.0", "torch>=2.0.0", "transformers>=4.40.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

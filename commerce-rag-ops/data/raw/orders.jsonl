@@ -1,0 +1,5 @@
+{"order_id":"ORD-1001","customer_id":"C-001","product_id":"P-BEAUTY-001","sku":"BEAUTY-SERUM-01","status":"delivered","delivery_status":"delivered with damage report","order_date":"2026-03-12","total":24.99}
+{"order_id":"ORD-1002","customer_id":"C-002","product_id":"P-SOFT-001","sku":"SOFT-PDF-01","status":"fulfilled","delivery_status":"digital license sent","order_date":"2026-01-18","total":59.0}
+{"order_id":"ORD-1003","customer_id":"C-003","product_id":"P-BABY-001","sku":"BABY-MONITOR-01","status":"delivered","delivery_status":"late delivery reported","order_date":"2026-05-09","total":89.99}
+{"order_id":"ORD-1004","customer_id":"C-004","product_id":"P-SOFT-002","sku":"SOFT-BACKUP-02","status":"renewed","delivery_status":"subscription renewal","order_date":"2026-04-02","total":79.0}
+

@@ -1,0 +1,28 @@
+# Python/runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local secrets and machine-specific config
+.env
+.env.*
+!.env.example
+*.local
+
+# Local vector index; rebuild with qdrant-index.
+.qdrant/
+
+# Full public raw downloads are tracked by manifest and can be re-downloaded.
+# They exceed normal GitHub file limits and should not be committed directly.
+data/raw/amazon_reviews_2023/**/*.gz
+
+# Local logs
+*.log
+
+# Local trace databases
+reports/*.db
+reports/*.db-*

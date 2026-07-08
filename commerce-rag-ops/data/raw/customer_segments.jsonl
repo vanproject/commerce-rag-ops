@@ -1,0 +1,4 @@
+{"customer_id":"C-001","segment":"beauty_sensitive_skin","preferred_category":"All_Beauty","lifetime_value":186.5,"churn_risk":"medium","notes":"Responds well to fragrance-free skincare recommendations but has one damaged-delivery complaint."}
+{"customer_id":"C-002","segment":"software_power_user","preferred_category":"Software","lifetime_value":320.0,"churn_risk":"low","notes":"Uses document tools and expects fast digital fulfillment."}
+{"customer_id":"C-003","segment":"new_parent_monitoring","preferred_category":"Baby_products","lifetime_value":248.0,"churn_risk":"high","notes":"Concerned about baby monitor battery reliability and late delivery."}
+{"customer_id":"C-004","segment":"subscription_sensitive","preferred_category":"Software","lifetime_value":112.0,"churn_risk":"high","notes":"Sensitive to auto-renewal messaging and cancellation clarity."}

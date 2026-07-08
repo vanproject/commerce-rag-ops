@@ -1,0 +1,6 @@
+reason_code,category,customer_signal,required_evidence,recommended_action,risk_level
+DAMAGED_DELIVERY,returns,leaking broken cracked photo,order id and product photo,validate replacement or refund,high
+DIGITAL_NON_DELIVERY,digital_delivery,missing license key email,account email and fulfillment log,resend license or escalate fulfillment,medium
+SUBSCRIPTION_RENEWAL,payment,unexpected renewal cancellation,renewal timestamp and usage check,apply renewal refund policy,high
+MISSING_PART,post_purchase,cap accessory missing,package photo and missing part description,ship replacement part,medium
+LATE_DELIVERY,shipping,late carrier delay,carrier scan and promised delivery window,explain status and escalate if lost,medium

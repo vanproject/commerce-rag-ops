@@ -1,0 +1,22 @@
+{
+  "precision@5_min": 0.998,
+  "recall@5_min": 0.93,
+  "mrr_min": 0.98,
+  "ndcg@5_min": 0.995,
+  "citation_ok_min": 0.9,
+  "citation_schema_ok_min": 0.9,
+  "answer_citation_precision_min": 0.9,
+  "citation_grounded_rate_min": 0.9,
+  "keyword_coverage_min": 0.75,
+  "groundedness_proxy_min": 0.75,
+  "latency_p95_ms_max": 850,
+  "by_intent.customer_ops.retrieval.precision@5_min": 0.99,
+  "by_intent.customer_ops.retrieval.recall@5_min": 0.91,
+  "by_intent.customer_ops.retrieval.ndcg@5_min": 0.995,
+  "by_intent.recommendation.retrieval.precision@5_min": 0.95,
+  "by_intent.recommendation.retrieval.recall@5_min": 0.94,
+  "by_intent.recommendation.retrieval.ndcg@5_min": 0.98,
+  "by_intent.support.retrieval.precision@5_min": 0.995,
+  "by_intent.support.retrieval.recall@5_min": 0.96,
+  "by_intent.support.retrieval.ndcg@5_min": 0.995
+}
