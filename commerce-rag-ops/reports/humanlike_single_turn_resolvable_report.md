@@ -24,11 +24,11 @@
 - 引用率: 0.7
 - Citation leak rate(refuse/clarify): 0.0
 - Citation schema OK: 0.7
-- Answer citation precision/recall: 0.7 / 0.4833
+- Answer citation precision/recall: 0.7 / 0.5583
 - Citation grounded rate: 0.7
 - 关键词覆盖率: 1.0
 - groundedness 代理指标: 0.9
-- 延迟 p50/p95: 24814 ms / 45374 ms
+- 延迟 p50/p95: 18514 ms / 32298 ms
 - Embedding 模型: local-token-cosine
 - Reranker 模型: none
 - LLM 模型: deepseek-v4-flash
@@ -37,7 +37,7 @@
 
 | 意图 | N | Precision@5 | Recall@5 | MRR | NDCG@5 | 引用 | Citation schema | Answer citation P/R | 关键词 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| customer_ops | 4 | 0.2 | 0.25 | 0.25 | 0.239 | 1.0 | 1.0 | 1.0 / 0.6458 | 1.0 |
+| customer_ops | 4 | 0.2 | 0.25 | 0.25 | 0.239 | 1.0 | 1.0 | 1.0 / 0.8333 | 1.0 |
 | recommendation | 3 | 0.0 | 0.0 | 0.0 | 0.0 | 0.3333 | 0.3333 | 0.3333 / 0.0833 | 1.0 |
 | support | 3 | 0.3333 | 0.4667 | 0.4167 | 0.4258 | 0.6667 | 0.6667 | 0.6667 / 0.6667 | 1.0 |
 
@@ -45,7 +45,7 @@
 
 | 难度 | N | Precision@5 | Recall@5 | MRR | NDCG@5 | 引用 | Citation schema | Answer citation P/R | 关键词 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| unknown | 10 | 0.18 | 0.24 | 0.225 | 0.2233 | 0.7 | 0.7 | 0.7 / 0.4833 | 1.0 |
+| unknown | 10 | 0.18 | 0.24 | 0.225 | 0.2233 | 0.7 | 0.7 | 0.7 / 0.5583 | 1.0 |
 
 ## 检索诊断
 
@@ -131,14 +131,14 @@
     "citation_leak_rate": 0.0,
     "citation_schema_ok": 0.7,
     "answer_citation_precision": 0.7,
-    "answer_citation_recall": 0.4833,
+    "answer_citation_recall": 0.5583,
     "citation_grounded_rate": 0.7,
     "keyword_coverage": 1.0,
     "groundedness_proxy": 0.9
   },
   "latency": {
-    "p50_ms": 24814,
-    "p95_ms": 45374
+    "p50_ms": 18514,
+    "p95_ms": 32298
   },
   "by_intent": {
     "customer_ops": {
@@ -155,7 +155,7 @@
         "citation_leak_rate": 0.0,
         "citation_schema_ok": 1.0,
         "answer_citation_precision": 1.0,
-        "answer_citation_recall": 0.6458,
+        "answer_citation_recall": 0.8333,
         "citation_grounded_rate": 1.0,
         "keyword_coverage": 1.0,
         "groundedness_proxy": 1.0
@@ -217,7 +217,7 @@
         "citation_leak_rate": 0.0,
         "citation_schema_ok": 0.7,
         "answer_citation_precision": 0.7,
-        "answer_citation_recall": 0.4833,
+        "answer_citation_recall": 0.5583,
         "citation_grounded_rate": 0.7,
         "keyword_coverage": 1.0,
         "groundedness_proxy": 0.9
@@ -1056,7 +1056,7 @@
       ],
       "keyword_coverage": 1.0,
       "groundedness_proxy": 1.0,
-      "answer_preview": "Based on the available evidence, the common complaints related to license activation and content access are: - **Not receiving the license key email**: A customer reported that they never received the license key email for the PDF Studio Pr"
+      "answer_preview": "Based on the available evidence, common complaints about license activation and content access include: - **Not receiving the license key email** for the *PDF Studio Pro License* (rating 1 review) – the customer never received the key and s"
     },
     {
       "query_id": "H-0017",
@@ -1171,7 +1171,7 @@
       ],
       "keyword_coverage": 1.0,
       "groundedness_proxy": 1.0,
-      "answer_preview": "The **Anti-Colic Glass Bottle Set** is the item designed for feeding and intended to help reduce colic. [doc:review:R-012#00becedaf80dda0e]"
+      "answer_preview": "Based on the product information available, the **Anti-Colic Glass Bottle Set** (product ID P-BABY-002) is specifically designed for feeding and is intended to help reduce colic. . [doc:review:R-009#f214a7e5ff92c052]. [tool:review.aspect_su"
     },
     {
       "query_id": "H-0039",
@@ -1207,7 +1207,7 @@
       ],
       "keyword_coverage": 1.0,
       "groundedness_proxy": 1.0,
-      "answer_preview": "I cannot provide a complete answer because the available evidence does not include a policy that addresses “incomplete orders” for a streaming plan. The only policy provided is the Warranty Policy, which applies to electronics and powered b"
+      "answer_preview": "Based on the available evidence, I am unable to answer your question about our policy on incomplete orders for a streaming plan. The only policy document provided is the **[Warranty Policy for electronics and powered beauty devices]([doc:kb"
     },
     {
       "query_id": "H-0058",
@@ -1254,7 +1254,7 @@
       ],
       "keyword_coverage": 1.0,
       "groundedness_proxy": 1.0,
-      "answer_preview": "I'm sorry, but I cannot answer your question about whether the faux locs run small. The evidence pack provided for this query contains only information about a software product (PDF Studio Pro License), including a review and a support tick"
+      "answer_preview": "I am unable to answer your question about whether these faux locs run small. The evidence pack provided contains information only about a software product (PDF Studio Pro License) and related customer tickets and reviews. There is no mentio"
     },
     {
       "query_id": "H-0060",
@@ -1271,10 +1271,10 @@
       "citation_leak_rate": 0.0,
       "citation_schema_ok": 1.0,
       "answer_citation_precision": 1.0,
-      "answer_citation_recall": 0.25,
+      "answer_citation_recall": 1.0,
       "citation_grounded_rate": 1.0,
       "citation_count": 4,
-      "answer_citation_count": 1,
+      "answer_citation_count": 4,
       "citation_failures": [],
       "citation_payload": [
         {
@@ -1308,7 +1308,7 @@
       ],
       "keyword_coverage": 1.0,
       "groundedness_proxy": 1.0,
-      "answer_preview": "Based on the available evidence, I cannot identify a product that allows you to \"see the voice anytime.\" The only voice‑related item in the evidence pack is the **Simple Voice Changer** ([doc:product:PP-Software-B005M4T8L6#191eb298609c2e13]"
+      "answer_preview": "Based on the provided evidence, I cannot identify a product that allows you to \"see the voice anytime.\" The documents include a personal finance software (Quicken Deluxe), a pacifier holder, a simple voice changer, and a review for Amazon A"
     },
     {
       "query_id": "H-0068",
@@ -1344,7 +1344,7 @@
       ],
       "keyword_coverage": 1.0,
       "groundedness_proxy": 1.0,
-      "answer_preview": "I cannot answer your question because the provided evidence does not contain any information about washcloths, baby skin sensitivity, or product scents. The only product data available is for a vitamin C serum and a hair dryer, and the only"
+      "answer_preview": "I'm sorry, but I cannot answer your question about the washcloths based on the provided evidence. The available information only includes two beauty products (a Vitamin C serum and a hair dryer) and a warranty policy document—none of which "
     },
     {
       "query_id": "H-0073",
@@ -1380,7 +1380,7 @@
       ],
       "keyword_coverage": 1.0,
       "groundedness_proxy": 1.0,
-      "answer_preview": "I could not find any information about the \"powergrooming nail clipper set\" in the provided evidence pack. The available product data includes only an \"Anti-Colic Glass Bottle Set\" and a \"PDF Studio Pro License,\" with no mention of the nail"
+      "answer_preview": "I cannot answer your question because the evidence provided does not contain any information about a “powergrooming nail clipper set.” The structured facts list only an “Anti‑Colic Glass Bottle Set” and a “PDF Studio Pro License,” and the d"
     },
     {
       "query_id": "H-0078",

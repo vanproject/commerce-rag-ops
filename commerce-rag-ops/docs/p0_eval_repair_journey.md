@@ -233,3 +233,58 @@ Observed `humanlike_single_turn_resolvable` local weak-retrieval first-10:
 Known limitation:
 
 - This is the first P1 pass. It does not yet implement the full structured retrieval plan, required-facet fanout, or hard-negative reranking matrix from the repair plan.
+
+## P1 Retrieval Plan and Facet-Aware Evidence Pass
+
+Added:
+
+- `src/commerce_rag_ops/retrieval_plan.py`
+- `AgentState.structured_retrieval_plan`
+- Facet-aware entity evidence completion in `EntityCandidateRetriever.complete_entity_evidence()`
+
+Design:
+
+- Build a structured retrieval plan with `intent`, `entity_need`, `facets`, `sources`, `must_have`, and `should_not`.
+- Infer facets from user language, including `skin_scent`, `quality_damage`, `digital_license`, `battery_power`, `price_value`, `delivery`, `refund_return`, `missing_parts`, and `general_support`.
+- When a unique entity is selected, keep same-product contexts and complete missing product/profile plus required-facet evidence from the processed chunk index.
+- Record the structured plan in semantic memory diagnostics, memory read output, and `retrieve` trace events.
+
+Verification:
+
+```bash
+python -m compileall src
+pytest tests/test_core.py -q -k "entity_candidate or context_required_reference or eval_runs"
+pytest -q
+```
+
+Observed:
+
+- Focused retrieval tests: `5 passed`
+- Full regression after retrieval plan/facet pass: `46 passed`
+
+Real LLM smoke after retrieval plan/facet pass:
+
+```bash
+python -m commerce_rag_ops.cli eval --eval-filename humanlike_context_required.jsonl --generator openai-compatible --reranker-model none --limit 10 --output reports/humanlike_context_required_report.md
+python -m commerce_rag_ops.cli eval --eval-filename humanlike_single_turn_resolvable.jsonl --generator openai-compatible --reranker-model none --limit 10 --output reports/humanlike_single_turn_resolvable_report.md
+```
+
+Observed `humanlike_context_required` first-10:
+
+- `action_accuracy`: 1.0
+- `citation_leak_rate`: 0.0
+- `citation_schema_ok`: 1.0
+
+Observed `humanlike_single_turn_resolvable` local weak-retrieval first-10:
+
+- `exact_recall@5`: 0.3
+- `acceptable_recall@5`: 0.3
+- `entity_accuracy@5`: 0.3
+- `aspect_accuracy@5`: 0.7
+- `action_accuracy`: 0.7
+- `citation_schema_ok`: 0.7
+- `answer_citation_recall`: 0.5583
+
+Known limitation:
+
+- The plan is rule-based. It does not yet use a real LLM planner, and hard-negative rerank penalties are still pending.

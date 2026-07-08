@@ -145,19 +145,88 @@ class EntityCandidateRetriever:
         *,
         sources: Iterable[str] | None = None,
         top_k: int = 5,
+        facets: Iterable[str] | None = None,
     ) -> list[SearchResult]:
         source_filter = set(sources or [])
+        required_facets = {str(facet).lower().strip() for facet in facets or [] if str(facet).strip()}
         chunks = [
             chunk
             for chunk in self.chunks_by_product_id.get(product_id, [])
             if not source_filter or chunk.source in source_filter
         ]
-        chunks.sort(key=_evidence_chunk_order)
+        chunks.sort(key=lambda chunk: _evidence_chunk_order(chunk, required_facets))
         results: list[SearchResult] = []
         for rank, chunk in enumerate(chunks[:top_k], start=1):
             score = max(0.1, 1.0 - rank * 0.05)
             results.append(SearchResult(chunk=chunk, score=score, rerank_score=score))
         return results
+
+    def complete_entity_evidence(
+        self,
+        results: list[SearchResult],
+        product_id: str,
+        *,
+        sources: Iterable[str] | None = None,
+        facets: Iterable[str] | None = None,
+        top_k: int = 5,
+    ) -> list[SearchResult]:
+        if not product_id:
+            return results[:top_k]
+        required_facets = {str(facet).lower().strip() for facet in facets or [] if str(facet).strip()}
+        source_filter = set(sources or [])
+        selected = constrain_results_to_entity(results, product_id)
+        selected = [result for result in selected if _result_product_id(result) in {"", product_id}]
+        needed_chunks: list[DocumentChunk] = []
+        if not any(_doc_type(result.chunk) == "product_profile" for result in selected):
+            needed_chunks.extend(self._matching_chunks(product_id, doc_types={"product_profile", "product"}, sources=source_filter))
+        covered_facets = set().union(*(_chunk_aspects(result.chunk) for result in selected)) if selected else set()
+        missing_facets = required_facets - covered_facets
+        for facet in sorted(missing_facets):
+            needed_chunks.extend(
+                self._matching_chunks(
+                    product_id,
+                    doc_types={"review_aspect_summary", "review_evidence", "faq_case", "review", "ticket"},
+                    sources=source_filter,
+                    facet=facet,
+                )
+            )
+        completed: list[SearchResult] = []
+        seen: set[tuple[str, str, str]] = set()
+        for chunk in needed_chunks:
+            key = _chunk_key(chunk)
+            if key in seen:
+                continue
+            seen.add(key)
+            score = 1.05 if _doc_type(chunk) == "product_profile" else 1.0
+            completed.append(SearchResult(chunk=chunk, score=score, rerank_score=score))
+        for result in selected:
+            key = _chunk_key(result.chunk)
+            if key in seen:
+                continue
+            seen.add(key)
+            completed.append(result)
+        completed.sort(key=lambda result: _evidence_chunk_order(result.chunk, required_facets))
+        return completed[:top_k]
+
+    def _matching_chunks(
+        self,
+        product_id: str,
+        *,
+        doc_types: set[str],
+        sources: set[str],
+        facet: str | None = None,
+    ) -> list[DocumentChunk]:
+        chunks = []
+        for chunk in self.chunks_by_product_id.get(product_id, []):
+            if sources and chunk.source not in sources:
+                continue
+            if _doc_type(chunk) not in doc_types:
+                continue
+            if facet and facet not in _chunk_aspects(chunk) and facet not in chunk.text.lower():
+                continue
+            chunks.append(chunk)
+        chunks.sort(key=lambda chunk: _evidence_chunk_order(chunk, {facet} if facet else set()))
+        return chunks
 
 
 def constrain_results_to_entity(results: list[SearchResult], product_id: str) -> list[SearchResult]:
@@ -241,7 +310,8 @@ def _doc_type(chunk: DocumentChunk) -> str:
     return str(chunk.metadata.get("doc_type") or chunk.metadata.get("document_type") or chunk.source)
 
 
-def _evidence_chunk_order(chunk: DocumentChunk) -> tuple[int, str, str]:
+def _evidence_chunk_order(chunk: DocumentChunk, required_facets: set[str] | None = None) -> tuple[int, int, str, str]:
+    required_facets = required_facets or set()
     priority = {
         "product_profile": 0,
         "product": 0,
@@ -251,7 +321,29 @@ def _evidence_chunk_order(chunk: DocumentChunk) -> tuple[int, str, str]:
         "faq_case": 3,
         "ticket": 3,
     }
-    return (priority.get(_doc_type(chunk), 9), chunk.source, chunk.doc_id)
+    facet_penalty = 0
+    if required_facets and not (_chunk_aspects(chunk) & required_facets):
+        facet_penalty = 1
+    return (priority.get(_doc_type(chunk), 9), facet_penalty, chunk.source, chunk.doc_id)
+
+
+def _result_product_id(result: SearchResult) -> str:
+    return str(result.chunk.metadata.get("product_id", "")).strip()
+
+
+def _chunk_key(chunk: DocumentChunk) -> tuple[str, str, str]:
+    return (chunk.source, chunk.doc_id, chunk.chunk_id)
+
+
+def _chunk_aspects(chunk: DocumentChunk) -> set[str]:
+    aspects: set[str] = set()
+    aspect = str(chunk.metadata.get("aspect", "")).lower().strip()
+    if aspect:
+        aspects.add(aspect)
+    raw_aspects = chunk.metadata.get("aspects", [])
+    if isinstance(raw_aspects, list):
+        aspects.update(str(item).lower().strip() for item in raw_aspects if str(item).strip())
+    return aspects
 
 
 def _sku_key(value: str) -> str:

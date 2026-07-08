@@ -119,6 +119,7 @@ class AgentState:
     # Deprecated compatibility mirror. The agent no longer treats this as a
     # control-plane retrieval plan; semantic memory is called through tools.
     retrieval_plan: list[str] = field(default_factory=list)
+    structured_retrieval_plan: dict[str, Any] = field(default_factory=dict)
     entity_retrieval: dict[str, Any] = field(default_factory=dict)
     entity_candidates: list[dict[str, Any]] = field(default_factory=list)
     selected_entity: dict[str, Any] | None = None

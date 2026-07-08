@@ -28,7 +28,7 @@
 - Citation grounded rate: 1.0
 - 关键词覆盖率: 1.0
 - groundedness 代理指标: 0.6
-- 延迟 p50/p95: 6259 ms / 31338 ms
+- 延迟 p50/p95: 5499 ms / 17528 ms
 - Embedding 模型: local-token-cosine
 - Reranker 模型: none
 - LLM 模型: deepseek-v4-flash
@@ -135,8 +135,8 @@
     "groundedness_proxy": 0.6
   },
   "latency": {
-    "p50_ms": 6259,
-    "p95_ms": 31338
+    "p50_ms": 5499,
+    "p95_ms": 17528
   },
   "by_intent": {
     "customer_ops": {

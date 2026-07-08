@@ -489,6 +489,48 @@ def test_agent_uses_entity_candidate_to_constrain_semantic_memory():
     assert [result.chunk.metadata["product_id"] for result in results] == ["B08P2DZB4X"]
 
 
+def test_entity_candidate_retrieval_completes_required_facet_evidence():
+    product = DocumentChunk(
+        chunk_id="product",
+        source="product",
+        doc_id="PP-All_Beauty-B08P2DZB4X",
+        text="Product profile for nira laser device with battery discussion.",
+        metadata={
+            "doc_type": "product_profile",
+            "product_id": "B08P2DZB4X",
+            "category": "All_Beauty",
+            "title": "nira laser device",
+        },
+    )
+    facet = DocumentChunk(
+        chunk_id="facet",
+        source="review",
+        doc_id="AS-All_Beauty-B08P2DZB4X-battery_power",
+        text="Review aspect summary says battery life and charge duration are recurring topics.",
+        metadata={
+            "doc_type": "review_aspect_summary",
+            "product_id": "B08P2DZB4X",
+            "category": "All_Beauty",
+            "aspect": "battery_power",
+        },
+    )
+
+    retriever = EntityCandidateRetriever([product, facet])
+    initial = [SearchResult(product, score=0.9, rerank_score=0.9)]
+    completed = retriever.complete_entity_evidence(
+        initial,
+        "B08P2DZB4X",
+        sources=["product", "review"],
+        facets=["battery_power"],
+        top_k=5,
+    )
+
+    assert [result.chunk.doc_id for result in completed] == [
+        "PP-All_Beauty-B08P2DZB4X",
+        "AS-All_Beauty-B08P2DZB4X-battery_power",
+    ]
+
+
 def test_eval_row_repair_removes_target_from_forbidden_products():
     row = {
         "query_id": "H-test",

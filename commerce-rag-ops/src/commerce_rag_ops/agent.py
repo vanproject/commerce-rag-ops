@@ -16,6 +16,7 @@ from .entity_retrieval import EntityCandidateRetriever, constrain_results_to_ent
 from .generator import AnswerGenerator, TemplateAnswerGenerator
 from .citation_quality import validate_citation_contract, validate_tool_citation_contract
 from .models import AgentState, Order, Product, SearchResult, Ticket
+from .retrieval_plan import build_retrieval_plan
 from .retriever_backends import RetrieverBackend
 from .runtime import AgentLoop, AgentStep, AgentStepExecutor, FinalAnswerBuilder, RunState
 from .sql_store import SQLStore, default_db_path
@@ -1243,6 +1244,7 @@ class CommerceRAGAgent:
         candidate_k: int,
     ) -> tuple[list[SearchResult], dict[str, Any]]:
         entity_query = query.split(" structured facts:", 1)[0].strip()
+        retrieval_plan = build_retrieval_plan(entity_query, intent=getattr(self, "_active_retrieval_intent", "unknown"), sources=sources)
         candidates = self.entity_retriever.retrieve(entity_query, top_k=5)
         constrained_product_ids = self._product_constraints_from_query(query)
         if constrained_product_ids:
@@ -1270,7 +1272,20 @@ class CommerceRAGAgent:
         if unique_selected:
             results = constrain_results_to_entity(results, selected.product_id)[:top_k]
             if not any(str(result.chunk.metadata.get("product_id", "")).strip() == selected.product_id for result in results):
-                results = self.entity_retriever.evidence_results(selected.product_id, sources=sources, top_k=top_k)
+                results = self.entity_retriever.evidence_results(
+                    selected.product_id,
+                    sources=sources,
+                    top_k=top_k,
+                    facets=retrieval_plan.facets,
+                )
+            else:
+                results = self.entity_retriever.complete_entity_evidence(
+                    results,
+                    selected.product_id,
+                    sources=sources,
+                    facets=retrieval_plan.facets,
+                    top_k=top_k,
+                )
         self._last_semantic_memory_results = results
         self._last_semantic_memory_diagnostics = dict(getattr(self.retriever, "last_diagnostics", {}) or {})
         entity_payload = {
@@ -1280,9 +1295,22 @@ class CommerceRAGAgent:
             "entity_candidates": [candidate.to_dict() for candidate in candidates],
             "should_clarify": should_clarify_for_entity(query, candidates),
         }
+        plan_payload = retrieval_plan.to_dict()
+        self._last_semantic_memory_diagnostics["retrieval_plan"] = plan_payload
         self._last_semantic_memory_diagnostics["entity_retrieval"] = entity_payload
         self._last_semantic_memory_diagnostics.setdefault("stages", []).insert(
             0,
+            {
+                "name": "query.retrieval_plan",
+                "duration_ms": 0,
+                "intent": plan_payload["intent"],
+                "entity_need": plan_payload["entity_need"],
+                "facets": plan_payload["facets"],
+                "must_have": plan_payload["must_have"],
+            },
+        )
+        self._last_semantic_memory_diagnostics.setdefault("stages", []).insert(
+            1,
             {
                 "name": "entity.candidate_retrieval",
                 "duration_ms": 0,
@@ -1362,18 +1390,24 @@ class CommerceRAGAgent:
         retrieve_started = time.perf_counter()
         self._last_semantic_memory_results = []
         self._last_semantic_memory_diagnostics = {}
-        memory_tool_results = self.tool_executor.run(
-            [memory_call],
-            query=effective_query,
-            intent=state.intent,
-            domain=state.domain,
-            risk_level=state.risk_level,
-        )
+        self._active_retrieval_intent = state.intent
+        try:
+            memory_tool_results = self.tool_executor.run(
+                [memory_call],
+                query=effective_query,
+                intent=state.intent,
+                domain=state.domain,
+                risk_level=state.risk_level,
+            )
+        finally:
+            self._active_retrieval_intent = "unknown"
         memory_tool_result = memory_tool_results[0]
         state.retrieved_contexts = list(self._last_semantic_memory_results) if memory_tool_result.found else []
         retrieval_ms = int((time.perf_counter() - retrieve_started) * 1000)
         retrieval_diagnostics = self._last_semantic_memory_diagnostics
+        plan_diagnostics = retrieval_diagnostics.get("retrieval_plan", {}) if isinstance(retrieval_diagnostics, dict) else {}
         entity_diagnostics = retrieval_diagnostics.get("entity_retrieval", {}) if isinstance(retrieval_diagnostics, dict) else {}
+        state.structured_retrieval_plan = dict(plan_diagnostics)
         state.entity_retrieval = dict(entity_diagnostics)
         state.entity_candidates = list(entity_diagnostics.get("entity_candidates", []))
         state.selected_entity = entity_diagnostics.get("selected_entity")
@@ -1385,6 +1419,7 @@ class CommerceRAGAgent:
             "post_category_filter_contexts": len(state.retrieved_contexts),
             "selected_context_ids": [self._context_id(result) for result in state.retrieved_contexts],
             "doc_citations": [self._citation(result) for result in state.retrieved_contexts[:top_k]],
+            "retrieval_plan": plan_diagnostics,
             "entity_retrieval": entity_diagnostics,
             "diagnostic_stages": retrieval_diagnostics.get("stages", []),
             "candidate_count": len(retrieval_diagnostics.get("candidates", [])),
@@ -1443,6 +1478,7 @@ class CommerceRAGAgent:
                 "post_category_filter_contexts": len(state.retrieved_contexts),
                 "diagnostic_stages": retrieval_diagnostics.get("stages", []),
                 "candidate_count": len(retrieval_diagnostics.get("candidates", [])),
+                "structured_retrieval_plan": plan_diagnostics,
                 "entity_retrieval": entity_diagnostics,
                 "top_contexts": [self._result_trace(r) for r in state.retrieved_contexts[:10]],
             }
