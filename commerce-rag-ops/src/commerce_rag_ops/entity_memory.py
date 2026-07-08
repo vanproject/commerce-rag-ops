@@ -14,17 +14,10 @@ PII_PATTERNS = [
     re.compile(r"\b(?:\d[ -]*?){13,16}\b"),
 ]
 
-PRIVACY_TERMS = {
-    "email",
-    "emails",
-    "address",
-    "payment",
-    "card",
-    "phone",
-    "all orders",
-    "every customer",
-    "private notes",
-}
+PRIVACY_TERMS = {"email", "emails", "payment", "card", "phone", "all orders", "every customer", "private notes"}
+SENSITIVE_ALWAYS_TERMS = {"bank account", "card number", "credit card", "payment method"}
+ADDRESS_TERMS = {"billing address", "shipping address"}
+SENSITIVE_RECALL_VERBS = {"gave", "provided", "remember", "remind", "save", "tell me", "what is", "what was"}
 
 ANAPHORA_TERMS = {
     "it",
@@ -94,6 +87,18 @@ def context_resolution_to_legacy_payload(query: str, resolution: ContextResoluti
     }
 
 
+def entity_types_to_clear(resolution: dict[str, Any]) -> list[str]:
+    blocked_reasons = set(resolution.get("blocked_reasons", []))
+    if "privacy_boundary" in blocked_reasons:
+        return ["order_id", "sku", "product_id", "category", "support_topic"]
+    explicit = resolution.get("explicit_entities", {})
+    if explicit.get("order_id"):
+        return ["order_id", "sku", "product_id"]
+    if explicit.get("sku"):
+        return ["sku", "product_id"]
+    return []
+
+
 def extract_entities_from_state(state: AgentState) -> list[dict[str, Any]]:
     entities: list[dict[str, Any]] = []
     if _has_pii(state.original_query or state.query):
@@ -159,7 +164,11 @@ def _query_skus(query: str) -> set[str]:
         match.lower()
         for match in re.findall(r"\b[a-z0-9]+(?:-[a-z0-9]+)+\b", query.lower())
     }
-    return {candidate for candidate in candidates if candidate not in order_ids and not candidate.startswith("ord-")}
+    return {
+        candidate
+        for candidate in candidates
+        if candidate not in order_ids and not candidate.startswith("ord-") and _looks_like_business_sku(candidate)
+    }
 
 
 def _support_topic(query: str) -> str | None:
@@ -181,12 +190,26 @@ def _is_followup(q: str) -> bool:
 
 
 def _has_privacy_signal(q: str) -> bool:
+    if any(term in q for term in SENSITIVE_ALWAYS_TERMS):
+        return True
+    if any(term in q for term in ADDRESS_TERMS) and any(verb in q for verb in SENSITIVE_RECALL_VERBS):
+        return True
     return any(term in q for term in PRIVACY_TERMS)
 
 
 def _has_pii(text: str) -> bool:
     q = normalize_text(text)
     return _has_privacy_signal(q) or any(pattern.search(text) for pattern in PII_PATTERNS)
+
+
+def _looks_like_business_sku(value: str) -> bool:
+    parts = value.lower().split("-")
+    if any(part.isdigit() for part in parts):
+        return True
+    if len(parts) >= 3:
+        return True
+    prefixes = {"baby", "beauty", "soft"}
+    return parts[0] in prefixes
 
 
 def _entity(entity_type: str, value: str, source: str, confidence: float, *, metadata: dict[str, Any] | None = None) -> dict[str, Any]:

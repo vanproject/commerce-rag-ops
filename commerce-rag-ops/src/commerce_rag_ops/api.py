@@ -11,7 +11,7 @@ from .agent import CommerceRAGAgent
 from .advisor import build_advisor
 from .conversation_store import ConversationStore
 from .etl import load_processed_chunks
-from .entity_memory import EntityResolver, context_resolution_to_legacy_payload, extract_entities_from_state
+from .entity_memory import EntityResolver, context_resolution_to_legacy_payload, entity_types_to_clear, extract_entities_from_state
 from .evaluation import run_evaluation
 from .generator import build_generator
 from .retrieval import HybridRetriever
@@ -88,7 +88,7 @@ class CommerceRAGRequestHandler(BaseHTTPRequestHandler):
                 state=state,
             )
             extracted_entities = extract_entities_from_state(state)
-            clear_types = _entity_types_to_clear(resolution)
+            clear_types = entity_types_to_clear(resolution)
             self.conversation_store.clear_entities(memory_context["conversation_id"], clear_types)
             self.conversation_store.upsert_entities(
                 memory_context["conversation_id"],
@@ -142,16 +142,6 @@ class CommerceRAGRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
-
-
-def _entity_types_to_clear(resolution: dict[str, Any]) -> list[str]:
-    explicit = resolution.get("explicit_entities", {})
-    clear: list[str] = []
-    if explicit.get("order_id"):
-        clear.extend(["order_id", "sku", "product_id"])
-    elif explicit.get("sku"):
-        clear.extend(["sku", "product_id"])
-    return clear
 
 
 def serve(

@@ -345,3 +345,52 @@ Interpretation:
 
 - The local weak-retrieval challenge smoke remains far below target; this still needs strong retrieval and better entity disambiguation.
 - The report now exposes `hard_negative_hit_rate` and `hard_negative_penalized_count`. This smoke did not hit a penalized agent context, but the deterministic unit test covers the penalty path.
+
+## P2 Memory Confidence and Conflict Clarification Pass
+
+Added:
+
+- `active_entity_records` in `ConversationStore.load_context()`
+- Confidence-aware entity carryover in `ContextResolver`
+- Candidate-derived ambiguity detection for product/SKU/order memory
+- Follow-up clarification block when multiple high-confidence product memories conflict
+- Shared `entity_types_to_clear()` for CLI/API/eval so privacy-boundary turns clear existing entity memory consistently
+- Business follow-up terms for order/task memory (`replacement`, `resend`, `license`, `renewal`, `price`, `bpa-free`)
+- SKU extraction guardrails so ordinary hyphenated phrases such as `two-year` are not memorized as SKU slots
+
+Design:
+
+- Existing `active_entities` remains a simple compatibility map.
+- New `active_entity_records` carries confidence, source, turn IDs, and metadata for the active slot.
+- Product follow-ups only inherit `product_id` with confidence `>= 0.8` and `sku` with confidence `>= 0.78`.
+- Order follow-ups only inherit `order_id` with confidence `>= 0.8`.
+- Multiple high-confidence product/SKU memories produce `clarify_conflicting_product_memory` instead of guessing the latest entity.
+- Privacy memory blocks now clear active business entities before future turns are scored or served.
+
+Verification:
+
+```bash
+python -m compileall src
+pytest tests/test_core.py -q -k "conversation_memory or context_resolver or privacy_payload or hyphenated or privacy_boundary or shipping_address"
+pytest -q
+$env:PYTHONPATH='src'; python -m commerce_rag_ops.cli memory-eval --memory-eval-path data/eval/multiturn_memory_heldout.jsonl
+```
+
+Observed:
+
+- Focused memory tests: `9 passed`
+- Full regression after memory confidence pass: `53 passed`
+- Memory eval used the 50-row designed heldout split with real `openai-compatible` generator, not `template`.
+- Memory heldout eval:
+  - `n`: 50
+  - `entity_carryover_accuracy`: 0.8
+  - `wrong_entity_leak_rate`: 0.0
+  - `clarification_rate_when_ambiguous`: 0.6
+  - `privacy_memory_block_rate`: 1.0
+  - `multi_turn_answer_success_rate`: 0.84
+
+Interpretation:
+
+- The memory heldout target from the repair plan (`multi_turn_success_rate >= 0.75`) is now met on the designed 50-row split.
+- Privacy memory blocking is now at 1.0 on heldout after clearing active entities for privacy-boundary turns.
+- Ambiguous follow-up clarification remains below the desired 0.75-0.90 range; remaining failures are cases where retrieval/tool evidence produces a single plausible entity from an otherwise ambiguous natural-language turn. This is left as follow-up work for task memory and stronger ambiguity detection.

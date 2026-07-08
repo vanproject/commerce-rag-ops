@@ -8,7 +8,7 @@ from commerce_rag_ops.citation_repair import repair_answer_citations
 from commerce_rag_ops.citation_quality import validate_citation_contract, validate_tool_citation_contract
 from commerce_rag_ops.conversation_store import ConversationStore
 from commerce_rag_ops.document_loaders import load_knowledge_documents_with_report
-from commerce_rag_ops.entity_memory import EntityResolver, context_resolution_to_legacy_payload, extract_entities_from_state
+from commerce_rag_ops.entity_memory import EntityResolver, context_resolution_to_legacy_payload, entity_types_to_clear, extract_entities_from_state
 from commerce_rag_ops.entity_retrieval import EntityCandidateRetriever
 from commerce_rag_ops.etl import load_processed_chunks, persist_processed
 from commerce_rag_ops.eval_repair import repair_eval_row
@@ -1339,6 +1339,117 @@ def test_conversation_memory_explicit_sku_overrides_previous_entity():
         active = store.load_context(context["conversation_id"], "u-2")["active_entities"]
         assert active["sku"] == "BABY-MONITOR-01"
         assert active["product_id"] == "P-BABY-001"
+
+
+def test_conversation_memory_exposes_confidence_records_and_blocks_product_conflict():
+    resolver = EntityResolver()
+
+    with TemporaryDirectory() as temp_dir:
+        store = ConversationStore(Path(temp_dir) / "conversations.db")
+        context = store.load_context(None, "u-conflict")
+        conversation_id = context["conversation_id"]
+        store.upsert_entities(
+            conversation_id,
+            [
+                {
+                    "entity_type": "product_id",
+                    "entity_value": "P-BEAUTY-001",
+                    "normalized_value": "P-BEAUTY-001",
+                    "source": "tool_results",
+                    "confidence": 0.95,
+                    "metadata": {},
+                },
+                {
+                    "entity_type": "product_id",
+                    "entity_value": "P-SOFT-001",
+                    "normalized_value": "P-SOFT-001",
+                    "source": "tool_results",
+                    "confidence": 0.93,
+                    "metadata": {},
+                },
+            ],
+            turn_id="turn-1",
+        )
+
+        followup_context = store.load_context(conversation_id, "u-conflict")
+        assert "product_id" in followup_context["ambiguous_entity_types"]
+        assert "product_id" in followup_context["entity_candidates"]
+
+        resolution = resolver.resolve_context("Can I get a refund for it?", followup_context)
+
+        assert resolution.referenced_entities == []
+        assert "clarify_conflicting_product_memory" in resolution.blocked_reasons
+        assert resolution.resolution_source == "none"
+
+
+def test_context_resolver_does_not_carry_low_confidence_product_memory():
+    resolver = EntityResolver()
+    memory_context = {
+        "active_entities": {"product_id": "P-BEAUTY-001", "sku": "BEAUTY-SERUM-01"},
+        "active_entity_records": {
+            "product_id": {"entity_value": "P-BEAUTY-001", "confidence": 0.55},
+            "sku": {"entity_value": "BEAUTY-SERUM-01", "confidence": 0.5},
+        },
+        "entity_candidates": {},
+        "ambiguous_entity_types": [],
+    }
+
+    resolution = resolver.resolve_context("What do reviews say about it?", memory_context)
+
+    assert resolution.referenced_entities == []
+    assert "no_compatible_entity" in resolution.blocked_reasons
+
+
+def test_context_resolver_carries_order_for_task_followup_terms():
+    resolver = EntityResolver()
+    memory_context = {
+        "active_entities": {"order_id": "ORD-1002", "product_id": "P-SOFT-001", "sku": "SOFT-PDF-01"},
+        "active_entity_records": {
+            "order_id": {"entity_value": "ORD-1002", "confidence": 0.98},
+            "product_id": {"entity_value": "P-SOFT-001", "confidence": 0.9},
+            "sku": {"entity_value": "SOFT-PDF-01", "confidence": 0.92},
+        },
+        "entity_candidates": {},
+        "ambiguous_entity_types": [],
+    }
+
+    resolution = resolver.resolve_context("Can you resend the license?", memory_context)
+
+    assert [entity.entity_type for entity in resolution.referenced_entities][:1] == ["order_id"]
+    assert resolution.resolution_source == "memory"
+
+
+def test_non_sku_hyphenated_phrases_are_not_memorized_as_skus():
+    state = AgentState(query="What about the price for a two-year plan, and are these bottles bpa-free?")
+    state.original_query = state.query
+
+    entities = extract_entities_from_state(state)
+
+    assert [entity for entity in entities if entity["entity_type"] == "sku"] == []
+
+
+def test_privacy_boundary_clears_existing_entity_memory():
+    resolution = {
+        "explicit_entities": {},
+        "blocked_reasons": ["privacy_boundary"],
+    }
+
+    assert entity_types_to_clear(resolution) == ["order_id", "sku", "product_id", "category", "support_topic"]
+
+
+def test_shipping_address_update_can_use_order_memory_without_privacy_block():
+    resolver = EntityResolver()
+    memory_context = {
+        "active_entities": {"order_id": "ORD-1004"},
+        "active_entity_records": {"order_id": {"entity_value": "ORD-1004", "confidence": 0.98}},
+        "entity_candidates": {},
+        "ambiguous_entity_types": [],
+    }
+
+    resolution = resolver.resolve_context("I need to update the shipping address for that order.", memory_context)
+
+    assert [entity.entity_type for entity in resolution.referenced_entities] == ["order_id"]
+    assert "privacy_boundary" not in resolution.blocked_reasons
 
 
 def test_privacy_payload_is_not_written_to_entity_memory():

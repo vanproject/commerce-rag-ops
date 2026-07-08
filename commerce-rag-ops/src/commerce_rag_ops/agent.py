@@ -2131,6 +2131,7 @@ def _compact_memory_context(memory_context: dict[str, Any]) -> dict[str, Any]:
         "conversation_id": memory_context.get("conversation_id"),
         "user_id": memory_context.get("user_id"),
         "active_entities": memory_context.get("active_entities", {}),
+        "active_entity_records": memory_context.get("active_entity_records", {}),
         "resolved_entities": memory_context.get("resolved_entities", []),
         "context_resolution": memory_context.get("context_resolution", {}),
         "recent_turn_count": len(memory_context.get("recent_turns", [])),

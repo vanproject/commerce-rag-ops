@@ -7,7 +7,7 @@ from typing import Any
 
 from .agent import CommerceRAGAgent
 from .conversation_store import ConversationStore
-from .entity_memory import EntityResolver, context_resolution_to_legacy_payload, extract_entities_from_state
+from .entity_memory import EntityResolver, context_resolution_to_legacy_payload, entity_types_to_clear, extract_entities_from_state
 
 
 def run_memory_evaluation(
@@ -46,7 +46,7 @@ def run_memory_evaluation(
                     resolved_query=agent_query,
                     state=state,
                 )
-                clear_types = _entity_types_to_clear(resolution)
+                clear_types = entity_types_to_clear(resolution)
                 store.clear_entities(conversation_id, clear_types)
                 store.upsert_entities(conversation_id, extract_entities_from_state(state), turn_id=turn_ids["user_turn_id"])
             active = store.load_context(conversation_id, user_id=f"eval-{case['case_id']}")["active_entities"]
@@ -66,13 +66,21 @@ def write_memory_eval_report(path: Path, report: dict[str, Any]) -> None:
         f"- Privacy memory block rate: {report['privacy_memory_block_rate']:.4f}",
         f"- Multi-turn success rate: {report['multi_turn_answer_success_rate']:.4f}",
         "",
-        "| case_id | pass | agent_query | observed_entities | used_entities | blocked_reasons |",
-        "|---|---:|---|---|---|---|",
+        "| subset | rows | pass_rate |",
+        "|---|---:|---:|",
+        f"| carryover | {report['subset_counts']['carryover']} | {report['entity_carryover_accuracy']:.4f} |",
+        f"| wrong-entity leak checks | {report['subset_counts']['wrong_entity_leak']} | {1.0 - report['wrong_entity_leak_rate']:.4f} |",
+        f"| ambiguous clarify/block | {report['subset_counts']['ambiguous']} | {report['clarification_rate_when_ambiguous']:.4f} |",
+        f"| privacy memory block | {report['subset_counts']['privacy']} | {report['privacy_memory_block_rate']:.4f} |",
+        "",
+        "| case_id | pattern | pass | agent_query | observed_entities | used_entities | blocked_reasons |",
+        "|---|---|---:|---|---|---|---|",
     ]
     for row in report["rows"]:
         lines.append(
-            "| {case_id} | {passed} | {agent_query} | {observed_entities} | {used_entities} | {blocked_reasons} |".format(
+            "| {case_id} | {pattern} | {passed} | {agent_query} | {observed_entities} | {used_entities} | {blocked_reasons} |".format(
                 case_id=row["case_id"],
+                pattern=row["pattern"],
                 passed=1 if row["passed"] else 0,
                 agent_query=str(row["agent_query"]).replace("|", "\\|"),
                 observed_entities=",".join(row["observed_entity_values"]),
@@ -103,6 +111,11 @@ def _score_case(
     passed = contains_ok and not_contains_ok and used_ok and blocked_ok and entity_count_ok
     return {
         "case_id": case["case_id"],
+        "pattern": case.get("pattern", ""),
+        "suite": case.get("suite", ""),
+        "expected_resolved_not_contains": case.get("expected_resolved_not_contains", []),
+        "expected_used_entity_types": case.get("expected_used_entity_types", []),
+        "expected_blocked_reasons": case.get("expected_blocked_reasons", []),
         "passed": passed,
         "agent_query": resolved_query,
         "resolved_query": resolved_query,
@@ -120,10 +133,10 @@ def _score_case(
 
 def _summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     n = len(rows)
-    carryover_rows = [row for row in rows if row["case_id"] in {"order_refund_carryover", "product_complaint_carryover"}]
-    wrong_leak_rows = [row for row in rows if row["case_id"] in {"explicit_sku_override", "ambiguous_product_no_carryover"}]
-    ambiguous_rows = [row for row in rows if row["case_id"] == "ambiguous_product_no_carryover"]
-    privacy_rows = [row for row in rows if row["case_id"] == "privacy_memory_block"]
+    carryover_rows = [row for row in rows if row["expected_used_entity_types"]]
+    wrong_leak_rows = [row for row in rows if row["expected_resolved_not_contains"]]
+    ambiguous_rows = [row for row in rows if _expects_ambiguous_block(row)]
+    privacy_rows = [row for row in rows if "privacy_boundary" in row["expected_blocked_reasons"]]
     return {
         "n": n,
         "entity_carryover_accuracy": _rate(row["used_ok"] and row["contains_ok"] for row in carryover_rows),
@@ -131,17 +144,21 @@ def _summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "clarification_rate_when_ambiguous": _rate(row["blocked_ok"] for row in ambiguous_rows),
         "privacy_memory_block_rate": _rate(row["blocked_ok"] and row["entity_count_ok"] for row in privacy_rows),
         "multi_turn_answer_success_rate": _rate(row["passed"] for row in rows),
+        "subset_counts": {
+            "carryover": len(carryover_rows),
+            "wrong_entity_leak": len(wrong_leak_rows),
+            "ambiguous": len(ambiguous_rows),
+            "privacy": len(privacy_rows),
+        },
         "rows": rows,
     }
 
 
-def _entity_types_to_clear(resolution: dict[str, Any]) -> list[str]:
-    explicit = resolution.get("explicit_entities", {})
-    if explicit.get("order_id"):
-        return ["order_id", "sku", "product_id"]
-    if explicit.get("sku"):
-        return ["sku", "product_id"]
-    return []
+def _expects_ambiguous_block(row: dict[str, Any]) -> bool:
+    reasons = set(row["expected_blocked_reasons"])
+    return row["pattern"] == "ambiguous_no_carryover" or bool(
+        reasons & {"ambiguous_reference", "ambiguous_product_memory", "clarify_conflicting_product_memory"}
+    )
 
 
 def _rate(values) -> float:

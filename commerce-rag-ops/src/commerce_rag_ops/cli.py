@@ -17,7 +17,7 @@ from .combined_eval import (
 from .config import load_dotenv
 from .conversation_store import ConversationStore
 from .etl import load_processed_chunks, persist_processed
-from .entity_memory import EntityResolver, context_resolution_to_legacy_payload, extract_entities_from_state
+from .entity_memory import EntityResolver, context_resolution_to_legacy_payload, entity_types_to_clear, extract_entities_from_state
 from .eval_repair import split_and_repair_humanlike_evalset, write_eval_repair_report
 from .evaluation import (
     evaluate_quality_gates,
@@ -457,16 +457,6 @@ def run_with_optional_memory(agent: CommerceRAGAgent, query: str, args: argparse
             "blocked_reasons": resolution.get("blocked_reasons", []),
         },
     }
-
-
-def entity_types_to_clear(resolution: dict[str, Any]) -> list[str]:
-    explicit = resolution.get("explicit_entities", {})
-    clear: list[str] = []
-    if explicit.get("order_id"):
-        clear.extend(["order_id", "sku", "product_id"])
-    elif explicit.get("sku"):
-        clear.extend(["sku", "product_id"])
-    return clear
 
 
 def cmd_build_sql(args: argparse.Namespace) -> None:

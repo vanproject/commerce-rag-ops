@@ -56,6 +56,7 @@ class ConversationStore:
             "user_id": user_id,
             "recent_turns": recent_turns,
             "active_entities": entities["active_entities"],
+            "active_entity_records": entities["active_entity_records"],
             "entity_candidates": entities["entity_candidates"],
             "ambiguous_entity_types": entities["ambiguous_entity_types"],
         }
@@ -96,6 +97,7 @@ class ConversationStore:
             row["metadata"] = json.loads(row.pop("metadata_json") or "{}")
             candidates.setdefault(row["entity_type"], []).append(row)
         active: dict[str, Any] = {}
+        active_records: dict[str, dict[str, Any]] = {}
         ambiguous: list[str] = []
         for entity_type, values in candidates.items():
             normalized_values = {item["normalized_value"] for item in values}
@@ -103,8 +105,10 @@ class ConversationStore:
                 ambiguous.append(entity_type)
                 continue
             active[entity_type] = values[0]["entity_value"]
+            active_records[entity_type] = values[0]
         return {
             "active_entities": active,
+            "active_entity_records": active_records,
             "entity_candidates": candidates,
             "ambiguous_entity_types": ambiguous,
         }
